@@ -4,7 +4,7 @@ ShortcutArtisan is an application for creating and managing custom keyboard shor
 
 ## Getting Started
 
-⚠️ Warn!  [Read this section](https://v2.tauri.app/start/prerequisites/):
+⚠️ Warn! [Read this section](https://v2.tauri.app/start/prerequisites/):
 
 First, run the development server:
 
