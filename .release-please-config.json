@@ -1,6 +1,6 @@
 {
   "initial-version": "0.1.0",
-  "bootstrap-sha": "commit-hash",
+  "bootstrap-sha": "b611df7c28f5ba8f43db6ac17d083fa6a90abf46",
   "release-type": "node",
   "target-branch": "main",
   "changelog-sections": [
