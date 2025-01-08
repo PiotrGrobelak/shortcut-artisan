@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "shortcut-artisan",
   "version": "0.1.0",
-  "identifier": "com.tauri.dev",
+  "identifier": "com.piotrgrobelak.shortcutartisan",
   "build": {
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build",
