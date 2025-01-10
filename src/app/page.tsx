@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useEffect, useState, useRef } from "react";
+import { register, unregister } from "@tauri-apps/plugin-global-shortcut";
 
 export default function Main() {
   const [shortcut, setShortcut] = useState<string[]>([]);
@@ -22,6 +23,22 @@ export default function Main() {
     }
     setIsFocused(false);
   };
+
+  useEffect(() => {
+    const registerShortcut = async () => {
+      await unregister("CommandOrControl+X");
+      await register("CommandOrControl+X", () => {
+        console.log("Shortcut triggered");
+        alert("Shortcut CommandOrControl+X triggered!");
+      });
+    };
+
+    registerShortcut();
+
+    return () => {
+      unregister("CommandOrControl+X");
+    };
+  }, []);
 
   const clearShortcut = () => {
     setShortcut([]);
