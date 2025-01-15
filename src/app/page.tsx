@@ -2,13 +2,20 @@
 
 import { Button } from "@/components/ui/button";
 import { useEffect, useState, useRef } from "react";
-import { register, unregister } from "@tauri-apps/plugin-global-shortcut";
+import { invoke } from "@tauri-apps/api/core";
 
 export default function Main() {
   const [shortcut, setShortcut] = useState<string[]>([]);
   const [savedShortcut, setSavedShortcut] = useState<string>("");
   const [isFocused, setIsFocused] = useState<boolean>(false);
   const divRef = useRef<HTMLDivElement>(null);
+
+  const sendShortcut = async () => {
+    const response = await invoke("handle_shortcut", {
+      shortcut: savedShortcut,
+    });
+    console.log("response", response);
+  };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     const key = event.key;
@@ -22,23 +29,8 @@ export default function Main() {
       divRef.current.blur();
     }
     setIsFocused(false);
+    sendShortcut();
   };
-
-  useEffect(() => {
-    const registerShortcut = async () => {
-      await unregister("CommandOrControl+X");
-      await register("CommandOrControl+X", () => {
-        console.log("Shortcut triggered");
-        alert("Shortcut CommandOrControl+X triggered!");
-      });
-    };
-
-    registerShortcut();
-
-    return () => {
-      unregister("CommandOrControl+X");
-    };
-  }, []);
 
   const clearShortcut = () => {
     setShortcut([]);
