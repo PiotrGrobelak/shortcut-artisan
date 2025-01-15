@@ -1,6 +1,13 @@
+#[tauri::command]
+fn handle_shortcut(shortcut: &str) -> &str {
+    log::info!("Get shortcut: {}", shortcut);
+    shortcut
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(
             tauri_plugin_log::Builder::new()
                 .clear_targets()
@@ -21,6 +28,7 @@ pub fn run() {
             log::info!("Application started :)");
             Ok(())
         })
+        .invoke_handler(tauri::generate_handler![handle_shortcut])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
