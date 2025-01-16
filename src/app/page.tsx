@@ -7,14 +7,29 @@ import { invoke } from "@tauri-apps/api/core";
 export default function Main() {
   const [shortcut, setShortcut] = useState<string[]>([]);
   const [savedShortcut, setSavedShortcut] = useState<string>("");
+  const [name, setName] = useState<string>("");
   const [isFocused, setIsFocused] = useState<boolean>(false);
   const divRef = useRef<HTMLDivElement>(null);
 
   const sendShortcut = async () => {
-    const response = await invoke("handle_shortcut", {
+    interface ShortcutPayload extends Record<string, unknown> {
+      shortcut: string;
+      name: string;
+    }
+
+    const payload: ShortcutPayload = {
       shortcut: savedShortcut,
-    });
-    console.log("response", response);
+      name: name,
+    };
+
+    try {
+      const response = await invoke("handle_shortcut", {
+        payload,
+      });
+      console.log("response", response);
+    } catch (error) {
+      console.error("Error setting shortcut", error);
+    }
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -29,12 +44,21 @@ export default function Main() {
       divRef.current.blur();
     }
     setIsFocused(false);
-    sendShortcut();
   };
 
   const clearShortcut = () => {
     setShortcut([]);
     setSavedShortcut("");
+    setName("");
+  };
+
+  const confirmShortcut = (): void => {
+    if (shortcut.length === 0 || name.trim() === "") {
+      alert("Please set a shortcut and enter a name");
+    } else {
+      sendShortcut();
+      alert("Shortcut set successfully!");
+    }
   };
 
   useEffect(() => {
@@ -47,6 +71,13 @@ export default function Main() {
       <main className="flex flex-col gap-8 row-start-2 items-center">
         <p>Application is under construction 👷‍♀️🚧</p>
         <p>Stay tuned for more updates! 🔃</p>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Enter name"
+          className="border p-2"
+        />
         <div
           ref={divRef}
           tabIndex={0}
@@ -60,6 +91,8 @@ export default function Main() {
         </div>
         <Button onClick={clearShortcut}>Clear Shortcut</Button>
         {savedShortcut && <p>Saved Shortcut: {savedShortcut}</p>}
+        <br />
+        <Button onClick={confirmShortcut}>Confirm</Button>
       </main>
       <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
         <p>Powered by Tauri 🏗️</p>
