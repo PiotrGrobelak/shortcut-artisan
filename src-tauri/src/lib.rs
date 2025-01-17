@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::fs::{self, File, Permissions};
 use std::io::Write;
 use std::os::unix::fs::PermissionsExt; // for setting file permissions on Unix-like systems
-use std::path::PathBuf;
+use tauri::Manager;
 use uuid::Uuid;
 
 #[derive(Deserialize)]
@@ -11,7 +11,7 @@ struct ShortcutParams {
     name: String,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct Shortcut {
     id: String,
     shortcut: String,
@@ -38,7 +38,7 @@ fn handle_shortcut(payload: ShortcutParams) -> String {
     let permissions = Permissions::from_mode(0o755);
     fs::set_permissions(&dir_path, permissions).expect("Failed to set permissions");
 
-    let file_path = dir_path.join(format!("{}.json", shortcut.name));
+    let file_path = dir_path.join("settings.json");
 
     log::info!("New shortcut save: {:?}", shortcut.name);
 
@@ -51,6 +51,38 @@ fn handle_shortcut(payload: ShortcutParams) -> String {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let home_dir = dirs::home_dir().expect("Failed to get home directory");
+    let file_path = home_dir.join(".shortcut-artisan").join("settings.json");
+
+    let shortcut: Option<Shortcut> = if file_path.exists() {
+        let file_content = fs::read_to_string(&file_path).expect("Failed to read settings.json");
+        serde_json::from_str(&file_content).ok()
+    } else {
+        None
+    };
+
+    let (first_part, second_part) = if let Some(shortcut) = &shortcut {
+        let parts: Vec<&str> = shortcut.shortcut.split('+').collect();
+        if parts.len() == 2 {
+            (Some(parts[0].to_string()), Some(parts[1].to_string()))
+        } else {
+            (None, None)
+        }
+    } else {
+        (None, None)
+    };
+
+    let first_part_clone = first_part.clone();
+    let second_part_clone = second_part.clone();
+
+    if let (Some(first_part), Some(second_part)) = (first_part, second_part) {
+        println!("First part: {}, Second part: {}", first_part, second_part);
+        log::info!("First part: {}, Second part: {}", first_part, second_part);
+    } else {
+        println!("Shortcut does not contain exactly one '+' character or no shortcut found");
+        log::info!("Shortcut does not contain exactly one '+' character or no shortcut found");
+    }
+
     tauri::Builder::default()
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(
@@ -69,7 +101,91 @@ pub fn run() {
                 ))
                 .build(),
         )
-        .setup(|_app| {
+        .setup(move |app| {
+            #[cfg(desktop)]
+            use tauri_plugin_global_shortcut::{
+                Code, GlobalShortcutExt, Modifiers, Shortcut as GlobalShortcut, ShortcutState,
+            };
+
+            log::info!("Shortcut: {:?}", shortcut);
+
+            // Parse the first_part into Modifiers
+            let modifiers = match first_part_clone.unwrap().to_lowercase().as_str() {
+                "control" => Modifiers::CONTROL,
+                "shift" => Modifiers::SHIFT,
+                "alt" => Modifiers::ALT,
+                "meta" => Modifiers::META,
+                _ => Modifiers::empty(),
+            };
+
+            // Convert second_part to Code
+            let code = match second_part_clone.unwrap().to_uppercase().as_str() {
+                "C" => Code::KeyC,
+                "D" => Code::KeyD,
+                "E" => Code::KeyE,
+                "F" => Code::KeyF,
+                "G" => Code::KeyG,
+                "H" => Code::KeyH,
+                "I" => Code::KeyI,
+                "J" => Code::KeyJ,
+                "K" => Code::KeyK,
+                "L" => Code::KeyL,
+                "M" => Code::KeyM,
+                "N" => Code::KeyN,
+                "O" => Code::KeyO,
+                "P" => Code::KeyP,
+                "Q" => Code::KeyQ,
+                "R" => Code::KeyR,
+                "S" => Code::KeyS,
+                "T" => Code::KeyT,
+                "U" => Code::KeyU,
+                "V" => Code::KeyV,
+                "W" => Code::KeyW,
+                "X" => Code::KeyX,
+                "Y" => Code::KeyY,
+                "Z" => Code::KeyZ,
+                "1" => Code::Digit1,
+                "2" => Code::Digit2,
+                "3" => Code::Digit3,
+                "4" => Code::Digit4,
+                "5" => Code::Digit5,
+                "6" => Code::Digit6,
+                "7" => Code::Digit7,
+                "8" => Code::Digit8,
+                "9" => Code::Digit9,
+                "0" => Code::Digit0,
+                _ => Code::Unidentified,
+            };
+
+            let user_shortcut = GlobalShortcut::new(Some(modifiers), code);
+
+            log::info!("User shortcut: {:?}", user_shortcut);
+
+            app.handle().plugin(
+                tauri_plugin_global_shortcut::Builder::new()
+                    .with_handler(move |_app, shortcut, event| {
+                        println!("{:?}", shortcut);
+                        log::info!("{:?}", shortcut);
+                        if shortcut == &user_shortcut {
+                            match event.state() {
+                                ShortcutState::Pressed => {
+                                    println!("User shortcut Pressed!");
+                                    log::info!("User shortcut Pressed!");
+                                }
+                                ShortcutState::Released => {
+                                    println!("User shortcut Released!");
+                                    log::info!("User shortcut Released!");
+                                }
+                            }
+                        }
+                    })
+                    .build(),
+            )?;
+
+            app.global_shortcut()
+                .register(user_shortcut)
+                .expect("Failed to register shortcut");
+
             log::info!("Application started :)");
             Ok(())
         })
