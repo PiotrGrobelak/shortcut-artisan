@@ -3,6 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { useEffect, useState, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { register, ShortcutEvent } from "@tauri-apps/plugin-global-shortcut";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
 export default function Main() {
   const [shortcut, setShortcut] = useState<string[]>([]);
@@ -65,6 +67,46 @@ export default function Main() {
     setSavedShortcut(shortcut.join("+"));
     console.log("Shortcut set to:", savedShortcut);
   }, [shortcut, savedShortcut]);
+
+  useEffect(() => {
+    let unlistenFn: UnlistenFn | undefined;
+
+    const handleShortcut = async () => {
+      console.log("Setting up shortcut listener");
+      try {
+        unlistenFn = await listen("shortcut-triggered", (event) => {
+          console.log("Shortcut triggered:", event);
+        });
+      } catch (error) {
+        console.error("Error setting up shortcut listener:", error);
+      }
+    };
+
+    handleShortcut();
+
+    // Cleanup function
+    return () => {
+      console.log("Cleaning up shortcut listener");
+      unlistenFn?.();
+    };
+  }, []);
+
+  useEffect(() => {
+    const registerShortcut = async () => {
+      try {
+        await register("CommandOrControl+L", async (event: ShortcutEvent) => {
+          if (event.state === "Released") {
+            console.log(`Shortcut event activated`, event);
+            await invoke("shortcut_pressed", { shortcut: event.shortcut });
+          }
+        });
+      } catch (error) {
+        console.error("Failed to register shortcut", error);
+      }
+    };
+
+    registerShortcut();
+  }, []);
 
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
