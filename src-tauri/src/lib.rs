@@ -2,9 +2,19 @@ use serde::{Deserialize, Serialize};
 use std::fs::{self, File, Permissions};
 use std::io::Write;
 use std::os::unix::fs::PermissionsExt; // for setting file permissions on Unix-like systems
+use tauri::AppHandle;
 use tauri::Emitter;
 use tauri::{Manager, Runtime};
+use tauri_plugin_global_shortcut::{
+    Code, GlobalShortcutExt, Modifiers, Shortcut as TauriShortcut, ShortcutState,
+};
 use uuid::Uuid;
+
+#[derive(Serialize, Deserialize)]
+struct Shortcut2 {
+    key_combination: String,
+    command_name: String,
+}
 
 #[derive(Deserialize)]
 struct ShortcutParams {
@@ -26,34 +36,100 @@ struct Shortcut {
 }
 
 #[tauri::command]
-fn handle_shortcut(payload: ShortcutParams) -> String {
+async fn register_shortcut(
+    app_handle: tauri::AppHandle,
+    shortcut: String,
+    command_name: String,
+) -> Result<(), String> {
+    // TODO: get keys from shortcut
+    let ctrl_alt_u_shortcut =
+        TauriShortcut::new(Some(Modifiers::CONTROL | Modifiers::ALT), Code::KeyU);
+
+    if app_handle
+        .global_shortcut()
+        .is_registered(ctrl_alt_u_shortcut)
+    {
+        log::info!("Unregistering existing shortcut: {}", shortcut);
+        app_handle
+            .global_shortcut()
+            .unregister(ctrl_alt_u_shortcut)
+            .map_err(|e| e.to_string())
+            .expect("Failed to unregister shortcut");
+    }
+
+    match app_handle
+        .global_shortcut()
+        .register(ctrl_alt_u_shortcut)
+        .map_err(|e| e.to_string())
+    {
+        Ok(_) => {
+            log::info!(
+                "Successfully registered shortcut: {} for command: {}",
+                shortcut,
+                command_name
+            );
+            Ok(())
+        }
+        Err(e) => {
+            log::error!("Failed to register shortcut: {} - Error: {}", shortcut, e);
+            Err(e)
+        }
+    }
+}
+
+#[tauri::command]
+async fn save_shortcut(
+    app_handle: tauri::AppHandle,
+    payload: ShortcutParams,
+) -> Result<(), String> {
     log::info!("Get shortcut: {}, name: {}", payload.shortcut, payload.name);
 
-    // Create a Shortcut struct with a unique ID
     let shortcut = Shortcut {
         id: Uuid::new_v4().to_string(),
-        shortcut: payload.shortcut,
-        name: payload.name,
+        shortcut: payload.shortcut.clone(),
+        name: payload.name.clone(),
     };
 
-    let json = serde_json::to_string(&shortcut).expect("Failed to serialize shortcut");
-
-    let home_dir = dirs::home_dir().expect("Failed to get home directory");
+    let home_dir = dirs::home_dir().ok_or("Failed to get home directory")?;
     let dir_path = home_dir.join(".shortcut-artisan");
 
-    fs::create_dir_all(&dir_path).expect("Failed to create directory");
-    let permissions = Permissions::from_mode(0o755);
-    fs::set_permissions(&dir_path, permissions).expect("Failed to set permissions");
+    fs::create_dir_all(&dir_path).map_err(|e| e.to_string())?;
+    fs::set_permissions(&dir_path, Permissions::from_mode(0o755)).map_err(|e| e.to_string())?;
 
     let file_path = dir_path.join("settings.json");
-
     log::info!("New shortcut save: {:?}", shortcut.name);
 
-    let mut file = File::create(file_path).expect("Failed to create file");
-    file.write_all(json.as_bytes())
-        .expect("Failed to write to file");
+    let json = serde_json::to_string(&shortcut).map_err(|e| e.to_string())?;
+    let mut file = File::create(file_path).map_err(|e| e.to_string())?;
+    file.write_all(json.as_bytes()).map_err(|e| e.to_string())?;
 
-    shortcut.id
+    register_shortcut(app_handle, shortcut.shortcut, shortcut.name).await
+}
+
+fn load_shortcuts_at_startup(app: &tauri::App) -> Result<(), String> {
+    let home_dir = dirs::home_dir().ok_or("Failed to get home directory")?;
+    let file_path = home_dir.join(".shortcut-artisan").join("settings.json");
+
+    if file_path.exists() {
+        let content = fs::read_to_string(&file_path).map_err(|e| e.to_string())?;
+        let shortcut: Shortcut2 = serde_json::from_str(&content).map_err(|e| e.to_string())?;
+
+        log::info!("Loading shortcut: {}", shortcut.command_name);
+
+        let rt = tokio::runtime::Runtime::new().map_err(|e| e.to_string())?;
+        rt.block_on(async {
+            // Register shortcut
+            register_shortcut(
+                app.handle().clone(),
+                shortcut.key_combination,
+                shortcut.command_name,
+            )
+            .await
+            .map_err(|e| e.to_string())
+        })?;
+    }
+
+    Ok(())
 }
 
 #[tauri::command]
@@ -64,38 +140,6 @@ async fn shortcut_pressed(shortcut: String) -> String {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let home_dir = dirs::home_dir().expect("Failed to get home directory");
-    let file_path = home_dir.join(".shortcut-artisan").join("settings.json");
-
-    let shortcut: Option<Shortcut> = if file_path.exists() {
-        let file_content = fs::read_to_string(&file_path).expect("Failed to read settings.json");
-        serde_json::from_str(&file_content).ok()
-    } else {
-        None
-    };
-
-    let (first_part, second_part) = if let Some(shortcut) = &shortcut {
-        let parts: Vec<&str> = shortcut.shortcut.split('+').collect();
-        if parts.len() == 2 {
-            (Some(parts[0].to_string()), Some(parts[1].to_string()))
-        } else {
-            (None, None)
-        }
-    } else {
-        (None, None)
-    };
-
-    let first_part_clone = first_part.clone();
-    let second_part_clone = second_part.clone();
-
-    if let (Some(first_part), Some(second_part)) = (first_part, second_part) {
-        println!("First part: {}, Second part: {}", first_part, second_part);
-        log::info!("First part: {}, Second part: {}", first_part, second_part);
-    } else {
-        println!("Shortcut does not contain exactly one '+' character or no shortcut found");
-        log::info!("Shortcut does not contain exactly one '+' character or no shortcut found");
-    }
-
     tauri::Builder::default()
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(
@@ -114,67 +158,46 @@ pub fn run() {
                 ))
                 .build(),
         )
-        .setup(move |app| {
-            #[cfg(desktop)]
-            {
-                use tauri_plugin_global_shortcut::{
-                    Code, GlobalShortcutExt, Modifiers, Shortcut as TauriShortcut, ShortcutState,
-                };
+        .plugin(
+            tauri_plugin_global_shortcut::Builder::new()
+                .with_handler(move |app, shortcut, event| {
+                    log::info!(
+                        "Shortcut detected: {:?}, State: {:?}",
+                        shortcut,
+                        event.state()
+                    );
 
-                let app_handle = app.handle().clone();
-                log::info!("Setup started!");
+                    let ctrl_alt_u_shortcut =
+                        TauriShortcut::new(Some(Modifiers::CONTROL | Modifiers::ALT), Code::KeyU);
 
-                // Definicja skrótu
-                let ctrl_alt_u_shortcut =
-                    TauriShortcut::new(Some(Modifiers::CONTROL | Modifiers::ALT), Code::KeyU);
-
-                // Rejestracja handlera
-                let plugin = tauri_plugin_global_shortcut::Builder::new()
-                    .with_shortcut(ctrl_alt_u_shortcut.clone())?
-                    .with_handler(move |_app, shortcut, event| {
-                        log::info!(
-                            "Shortcut detected: {:?}, State: {:?}",
-                            shortcut,
-                            event.state()
-                        );
-
-                        if shortcut == &ctrl_alt_u_shortcut {
-                            match event.state() {
-                                ShortcutState::Pressed => {
-                                    log::info!("Ctrl-N Pressed!");
-                                    let _ = app_handle
-                                        .emit("shortcut-triggered", "Ctrl-N Pressed!".to_string());
-                                }
-                                ShortcutState::Released => {
-                                    log::info!("Ctrl-N Released!");
-                                    let _ = app_handle
-                                        .emit("shortcut-triggered", "Ctrl-N Released!".to_string());
-                                }
+                    if shortcut == &ctrl_alt_u_shortcut {
+                        match event.state() {
+                            ShortcutState::Pressed => {
+                                log::info!("Ctrl-N Pressed!");
+                                let _ =
+                                    app.emit("shortcut-triggered", "Ctrl-N Pressed!".to_string());
+                            }
+                            ShortcutState::Released => {
+                                log::info!("Ctrl-N Released!");
+                                let _ =
+                                    app.emit("shortcut-triggered", "Ctrl-N Released!".to_string());
                             }
                         }
-                    })
-                    .build();
+                    }
+                })
+                .build(),
+        )
+        .invoke_handler(tauri::generate_handler![shortcut_pressed, save_shortcut])
+        .setup(|app| {
+            log::info!("Setup started!");
 
-                println!("Registering shortcut plugin...");
-                if let Err(e) = app.handle().plugin(plugin) {
-                    println!("Failed to register shortcut plugin: {}", e);
-                    log::error!("Failed to register shortcut plugin: {}", e);
-                    return Ok(());
-                } else {
-                    println!("Shortcut plugin registered successfully");
-                    log::info!("Shortcut plugin registered successfully");
-                }
-
-                // // Rejestracja skrótu
-                // if let Err(e) = app.global_shortcut().register(ctrl_alt_u_shortcut.clone()) {
-                //     log::error!("Failed to register shortcut: {}", e);
-                // } else {
-                //     log::info!("Successfully registered Ctrl+Alt+U shortcut");
-                // }
+            match load_shortcuts_at_startup(app) {
+                Ok(_) => log::info!("Shortcuts loaded successfully!"),
+                Err(e) => log::error!("Failed to load shortcuts: {}", e),
             }
+
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![handle_shortcut, shortcut_pressed])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

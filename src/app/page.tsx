@@ -25,7 +25,7 @@ export default function Main() {
     };
 
     try {
-      const response = await invoke("handle_shortcut", {
+      const response = await invoke("save_shortcut", {
         payload,
       });
       console.log("response", response);
@@ -91,22 +91,22 @@ export default function Main() {
     };
   }, []);
 
-  useEffect(() => {
-    const registerShortcut = async () => {
-      try {
-        await register("CommandOrControl+L", async (event: ShortcutEvent) => {
-          if (event.state === "Released") {
-            console.log(`Shortcut event activated`, event);
-            await invoke("shortcut_pressed", { shortcut: event.shortcut });
-          }
-        });
-      } catch (error) {
-        console.error("Failed to register shortcut", error);
-      }
-    };
+  // useEffect(() => {
+  //   const registerShortcut = async () => {
+  //     try {
+  //       await register("CommandOrControl+L", async (event: ShortcutEvent) => {
+  //         if (event.state === "Released") {
+  //           console.log(`Shortcut event activated`, event);
+  //           await invoke("shortcut_pressed", { shortcut: event.shortcut });
+  //         }
+  //       });
+  //     } catch (error) {
+  //       console.error("Failed to register shortcut", error);
+  //     }
+  //   };
 
-    registerShortcut();
-  }, []);
+  //   // registerShortcut();
+  // }, []);
 
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
