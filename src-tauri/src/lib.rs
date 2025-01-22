@@ -2,18 +2,14 @@ use serde::{Deserialize, Serialize};
 use std::fs::{self, File, Permissions};
 use std::io::Write;
 use std::os::unix::fs::PermissionsExt; // for setting file permissions on Unix-like systems
+use tauri::plugin::TauriPlugin;
 use tauri::AppHandle;
 use tauri::Emitter;
-use tauri::{Manager, Runtime};
+use tauri::Runtime;
 use tauri_plugin_global_shortcut::{
     Code, GlobalShortcutExt, Modifiers, Shortcut as TauriShortcut, ShortcutState,
 };
 use uuid::Uuid;
-
-use tauri::{
-    plugin::{Builder, TauriPlugin},
-    App,
-};
 
 #[derive(Serialize, Deserialize)]
 pub struct Shortcut2 {
@@ -27,12 +23,6 @@ struct ShortcutParams {
     name: String,
 }
 
-#[derive(Debug, serde::Serialize)]
-struct ShortcutPayload {
-    key: String,
-    state: String,
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 struct Shortcut {
     id: String,
@@ -43,40 +33,42 @@ struct Shortcut {
 #[tauri::command]
 async fn register_shortcut(
     app_handle: tauri::AppHandle,
-    shortcut: String,
+    key_combination: String,
     command_name: String,
 ) -> Result<(), String> {
-    // TODO: get keys from shortcut
-    let ctrl_alt_u_shortcut =
-        TauriShortcut::new(Some(Modifiers::CONTROL | Modifiers::ALT), Code::KeyU);
+    let shortcut_test = Shortcut2::new(&key_combination, &command_name);
+    let tauri_shortcut = shortcut_test
+        .to_tauri_shortcut()
+        .expect("Failed to create shortcut");
 
-    if app_handle
-        .global_shortcut()
-        .is_registered(ctrl_alt_u_shortcut)
-    {
-        log::info!("Unregistering existing shortcut: {}", shortcut);
+    if app_handle.global_shortcut().is_registered(tauri_shortcut) {
+        log::info!("Unregistering existing shortcut: {}", key_combination);
         app_handle
             .global_shortcut()
-            .unregister(ctrl_alt_u_shortcut)
+            .unregister(tauri_shortcut)
             .map_err(|e| e.to_string())
             .expect("Failed to unregister shortcut");
     }
 
     match app_handle
         .global_shortcut()
-        .register(ctrl_alt_u_shortcut)
+        .register(tauri_shortcut)
         .map_err(|e| e.to_string())
     {
         Ok(_) => {
             log::info!(
                 "Successfully registered shortcut: {} for command: {}",
-                shortcut,
+                key_combination,
                 command_name
             );
             Ok(())
         }
         Err(e) => {
-            log::error!("Failed to register shortcut: {} - Error: {}", shortcut, e);
+            log::error!(
+                "Failed to register shortcut: {} - Error: {}",
+                key_combination,
+                e
+            );
             Err(e)
         }
     }
@@ -105,7 +97,9 @@ async fn save_shortcut(
     log::info!("New shortcut save: {:?}", shortcut.name);
 
     let json = serde_json::to_string(&shortcut).map_err(|e| e.to_string())?;
+
     let mut file = File::create(file_path).map_err(|e| e.to_string())?;
+
     file.write_all(json.as_bytes()).map_err(|e| e.to_string())?;
 
     register_shortcut(app_handle, shortcut.shortcut, shortcut.name).await
@@ -123,7 +117,6 @@ fn load_shortcuts_at_startup(app: &tauri::App) -> Result<(), String> {
 
         let rt = tokio::runtime::Runtime::new().map_err(|e| e.to_string())?;
         rt.block_on(async {
-            // Register shortcut
             register_shortcut(
                 app.handle().clone(),
                 shortcut.key_combination,
@@ -147,25 +140,21 @@ impl Shortcut2 {
         }
     }
     pub fn to_tauri_shortcut(&self) -> Option<TauriShortcut> {
-        // Split the key combination into parts
         let parts: Vec<String> = self
             .key_combination
             .split('+')
             .map(|s| s.trim().to_uppercase())
             .collect();
 
-        // Initialize modifiers
         let mut modifiers = Modifiers::empty();
         let mut key_code = None;
 
-        // Process each part
         for part in parts {
             match part.as_str() {
                 "CTRL" | "CONTROL" => modifiers |= Modifiers::CONTROL,
                 "ALT" => modifiers |= Modifiers::ALT,
                 "SHIFT" => modifiers |= Modifiers::SHIFT,
                 "SUPER" | "CMD" | "WINDOWS" => modifiers |= Modifiers::SUPER,
-                // Handle the key code (last part)
                 key => {
                     key_code = match key {
                         "A" => Some(Code::KeyA),
@@ -214,7 +203,6 @@ impl Shortcut2 {
             }
         }
 
-        // Create TauriShortcut if we have a valid key code
         key_code.map(|code| TauriShortcut::new(Some(modifiers), code))
     }
 }
@@ -246,10 +234,15 @@ pub fn setup_global_shortcut_plugin<R: Runtime>() -> TauriPlugin<R> {
 
                     log::info!("Loading shortcut: {}", shortcut_to_parse.command_name);
 
-                    let ctrl_alt_u_shortcut =
-                        TauriShortcut::new(Some(Modifiers::CONTROL | Modifiers::ALT), Code::KeyU);
+                    let shortcut_test = Shortcut2::new(
+                        &shortcut_to_parse.key_combination,
+                        &shortcut_to_parse.command_name,
+                    );
+                    let tauri_shortcut = shortcut_test.to_tauri_shortcut().unwrap();
 
-                    if shortcut == &ctrl_alt_u_shortcut {
+                    log::info!("Tauri shortcut is: {:?}", tauri_shortcut);
+
+                    if shortcut == &tauri_shortcut {
                         match event.state() {
                             ShortcutState::Pressed => {
                                 log::info!("Ctrl-Alt-U Pressed!");
