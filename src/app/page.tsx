@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { useEffect, useState, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { register, ShortcutEvent } from "@tauri-apps/plugin-global-shortcut";
+// import { register, ShortcutEvent } from "@tauri-apps/plugin-global-shortcut";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
 export default function Main() {
