@@ -34,10 +34,8 @@ impl DefinitionFacade {
 
         self.save_to_disk(&shortcut)?;
 
-        let tauri_shortcut =
-            ExecutionFacade::new(&shortcut.key_combination, &shortcut.command_name)
-                .to_tauri_shortcut()
-                .expect("Failed to create shortcut");
+        let tauri_shortcut = ExecutionFacade::parse_shortcut(&shortcut.key_combination)
+            .expect("Failed to create shortcut");
 
         self.register_system_shortcut(tauri_shortcut).await?;
 

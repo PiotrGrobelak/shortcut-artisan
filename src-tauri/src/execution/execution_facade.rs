@@ -1,22 +1,19 @@
+use tauri::AppHandle;
 use tauri_plugin_global_shortcut::{
     Code, GlobalShortcutExt, Modifiers, Shortcut as TauriShortcut, ShortcutState,
 };
 
 pub struct ExecutionFacade {
-    key_combination: String,
-    command_name: String,
+    app_handle: AppHandle,
 }
 
 impl ExecutionFacade {
-    pub fn new(key_combination: &str, command_name: &str) -> Self {
-        Self {
-            key_combination: key_combination.to_string(),
-            command_name: command_name.to_string(),
-        }
+    pub fn new(app_handle: AppHandle) -> Self {
+        Self { app_handle }
     }
-    pub fn to_tauri_shortcut(&self) -> Option<TauriShortcut> {
-        let parts: Vec<String> = self
-            .key_combination
+
+    pub fn parse_shortcut(key_combination: &str) -> Option<TauriShortcut> {
+        let parts: Vec<String> = key_combination
             .split('+')
             .map(|s| s.trim().to_uppercase())
             .collect();
