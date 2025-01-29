@@ -1,18 +1,20 @@
+pub mod analytics;
+pub mod definition;
+pub mod execution;
+
+use analytics::setup_logging_plugin;
 use definition::definition_facade::DefinitionFacade;
 use definition::shortcut::{Shortcut, ShortcutParams};
 use execution::execution_facade::ExecutionFacade;
 use serde::{Deserialize, Serialize};
 use std::fs::{self};
 use tauri::plugin::TauriPlugin;
-use tauri::AppHandle;
 use tauri::Emitter;
 use tauri::Runtime;
+use tauri::{AppHandle, Manager};
 use tauri_plugin_global_shortcut::{
     Code, GlobalShortcutExt, Modifiers, Shortcut as TauriShortcut, ShortcutState,
 };
-
-pub mod definition;
-pub mod execution;
 
 fn load_shortcuts_at_startup(app: &tauri::App) -> Result<(), String> {
     let home_dir = dirs::home_dir().ok_or("Failed to get home directory")?;
@@ -26,12 +28,14 @@ fn load_shortcuts_at_startup(app: &tauri::App) -> Result<(), String> {
 
         let rt = tokio::runtime::Runtime::new().map_err(|e| e.to_string())?;
 
-        let definition_facade = DefinitionFacade::new(app.handle().clone());
-        let tauri_shortcut = ExecutionFacade::parse_shortcut(&shortcut.key_combination)
+        let execution_facade = ExecutionFacade::new(app.handle().clone());
+
+        let tauri_shortcut = execution_facade
+            .parse_shortcut(&shortcut.key_combination)
             .expect("Failed to create TauriShortcut");
 
         rt.block_on(async {
-            definition_facade
+            execution_facade
                 .register_system_shortcut(tauri_shortcut)
                 .await
                 .map_err(|e| e.to_string())
@@ -55,6 +59,8 @@ pub fn setup_global_shortcut_plugin<R: Runtime>() -> TauriPlugin<R> {
                     event.state()
                 );
 
+                let execution_facade = ExecutionFacade::new(app.clone());
+
                 let home_dir = dirs::home_dir()
                     .ok_or("Failed to get home directory")
                     .expect("Failed to get home directory");
@@ -70,24 +76,17 @@ pub fn setup_global_shortcut_plugin<R: Runtime>() -> TauriPlugin<R> {
 
                     log::info!("Loading shortcut: {}", shortcut_to_parse.command_name);
 
-                    let tauri_shortcut =
-                        ExecutionFacade::parse_shortcut(&shortcut_to_parse.key_combination)
-                            .expect("Failed to create TauriShortcut");
+                    let tauri_shortcut: TauriShortcut = execution_facade
+                        .parse_shortcut(&shortcut_to_parse.key_combination)
+                        .expect("Failed to create TauriShortcut");
 
                     log::info!("Tauri shortcut is: {:?}", tauri_shortcut);
 
                     if shortcut == &tauri_shortcut {
-                        match event.state() {
-                            ShortcutState::Pressed => {
-                                log::info!("Ctrl-Alt-U Pressed!");
-                                let _ = app
-                                    .emit("shortcut-triggered", "Ctrl-Alt-U Pressed!".to_string());
-                            }
-                            ShortcutState::Released => {
-                                log::info!("Ctrl-Alt-U Released!");
-                                let _ = app
-                                    .emit("shortcut-triggered", "Ctrl-Alt-U Released!".to_string());
-                            }
+                        if let Err(e) =
+                            execution_facade.handle_shortcut_event(tauri_shortcut, event.state())
+                        {
+                            log::error!("Failed to handle shortcut event: {}", e);
                         }
                     }
                 } else {
@@ -95,23 +94,6 @@ pub fn setup_global_shortcut_plugin<R: Runtime>() -> TauriPlugin<R> {
                 }
             },
         )
-        .build()
-}
-
-pub fn setup_logging_plugin<R: Runtime>() -> TauriPlugin<R> {
-    tauri_plugin_log::Builder::new()
-        .clear_targets()
-        .target(tauri_plugin_log::Target::new(
-            tauri_plugin_log::TargetKind::Stdout,
-        ))
-        .target(tauri_plugin_log::Target::new(
-            tauri_plugin_log::TargetKind::LogDir {
-                file_name: Some("logs".to_string()),
-            },
-        ))
-        .target(tauri_plugin_log::Target::new(
-            tauri_plugin_log::TargetKind::Webview,
-        ))
         .build()
 }
 

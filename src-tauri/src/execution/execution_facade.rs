@@ -1,18 +1,20 @@
 use tauri::AppHandle;
+use tauri::Emitter;
+use tauri::Runtime;
 use tauri_plugin_global_shortcut::{
     Code, GlobalShortcutExt, Modifiers, Shortcut as TauriShortcut, ShortcutState,
 };
 
-pub struct ExecutionFacade {
-    app_handle: AppHandle,
+pub struct ExecutionFacade<R: Runtime> {
+    app_handle: AppHandle<R>,
 }
 
-impl ExecutionFacade {
-    pub fn new(app_handle: AppHandle) -> Self {
+impl<R: Runtime> ExecutionFacade<R> {
+    pub fn new(app_handle: AppHandle<R>) -> Self {
         Self { app_handle }
     }
 
-    pub fn parse_shortcut(key_combination: &str) -> Option<TauriShortcut> {
+    pub fn parse_shortcut(&self, key_combination: &str) -> Option<TauriShortcut> {
         let parts: Vec<String> = key_combination
             .split('+')
             .map(|s| s.trim().to_uppercase())
@@ -76,5 +78,62 @@ impl ExecutionFacade {
         }
 
         key_code.map(|code| TauriShortcut::new(Some(modifiers), code))
+    }
+
+    pub async fn register_system_shortcut(
+        &self,
+        tauri_shortcut: TauriShortcut,
+    ) -> Result<(), String> {
+        if self
+            .app_handle
+            .global_shortcut()
+            .is_registered(tauri_shortcut)
+        {
+            log::info!("Unregistering existing shortcut: {}", tauri_shortcut);
+            self.app_handle
+                .global_shortcut()
+                .unregister(tauri_shortcut)
+                .map_err(|e| e.to_string())
+                .expect("Failed to unregister shortcut");
+        }
+
+        match self
+            .app_handle
+            .global_shortcut()
+            .register(tauri_shortcut)
+            .map_err(|e| e.to_string())
+        {
+            Ok(_) => {
+                log::info!("Successfully registered shortcut: {} ", tauri_shortcut,);
+                Ok(())
+            }
+            Err(e) => {
+                log::error!("Failed to register shortcut: {} ", tauri_shortcut,);
+                Err(e)
+            }
+        }
+    }
+
+    pub fn handle_shortcut_event(
+        &self,
+        shortcut: TauriShortcut,
+        state: ShortcutState,
+    ) -> Result<(), String> {
+        match state {
+            ShortcutState::Pressed => {
+                log::info!("Shortcut pressed: {:?}", shortcut);
+                return self
+                    .app_handle
+                    .emit("shortcut-triggered", "Shortcut Pressed!")
+                    .map_err(|e| e.to_string());
+            }
+            ShortcutState::Released => {
+                log::info!("Shortcut released: {:?}", shortcut);
+                return self
+                    .app_handle
+                    .emit("shortcut-triggered", "Shortcut Released!")
+                    .map_err(|e| e.to_string());
+            }
+        }
     }
 }
