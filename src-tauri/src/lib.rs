@@ -5,7 +5,8 @@ pub mod execution;
 use analytics::setup_logging_plugin;
 use definition::definition_facade::DefinitionFacade;
 use definition::shortcut::{Shortcut, ShortcutParams};
-use execution::execution_facade::ExecutionFacade;
+use execution::setup_global_shortcut_plugin;
+use execution::ExecutionFacade;
 use serde::{Deserialize, Serialize};
 use std::fs::{self};
 use tauri::plugin::TauriPlugin;
@@ -47,55 +48,55 @@ fn load_shortcuts_at_startup(app: &tauri::App) -> Result<(), String> {
     Ok(())
 }
 
-pub fn setup_global_shortcut_plugin<R: Runtime>() -> TauriPlugin<R> {
-    tauri_plugin_global_shortcut::Builder::new()
-        .with_handler(
-            move |app: &AppHandle<R>,
-                  shortcut,
-                  event: tauri_plugin_global_shortcut::ShortcutEvent| {
-                log::info!(
-                    "Shortcut detected: {:?}, State: {:?}",
-                    shortcut,
-                    event.state()
-                );
+// pub fn setup_global_shortcut_plugin<R: Runtime>() -> TauriPlugin<R> {
+//     tauri_plugin_global_shortcut::Builder::new()
+//         .with_handler(
+//             move |app: &AppHandle<R>,
+//                   shortcut,
+//                   event: tauri_plugin_global_shortcut::ShortcutEvent| {
+//                 log::info!(
+//                     "Shortcut detected: {:?}, State: {:?}",
+//                     shortcut,
+//                     event.state()
+//                 );
 
-                let execution_facade = ExecutionFacade::new(app.clone());
+//                 let execution_facade = ExecutionFacade::new(app.clone());
 
-                let home_dir = dirs::home_dir()
-                    .ok_or("Failed to get home directory")
-                    .expect("Failed to get home directory");
-                let file_path = home_dir.join(".shortcut-artisan").join("settings.json");
+//                 let home_dir = dirs::home_dir()
+//                     .ok_or("Failed to get home directory")
+//                     .expect("Failed to get home directory");
+//                 let file_path = home_dir.join(".shortcut-artisan").join("settings.json");
 
-                if file_path.exists() {
-                    let content = fs::read_to_string(&file_path)
-                        .map_err(|e| e.to_string())
-                        .expect("Failed to read file");
-                    let shortcut_to_parse: Shortcut = serde_json::from_str(&content)
-                        .map_err(|e| e.to_string())
-                        .expect("Failed to parse JSON");
+//                 if file_path.exists() {
+//                     let content = fs::read_to_string(&file_path)
+//                         .map_err(|e| e.to_string())
+//                         .expect("Failed to read file");
+//                     let shortcut_to_parse: Shortcut = serde_json::from_str(&content)
+//                         .map_err(|e| e.to_string())
+//                         .expect("Failed to parse JSON");
 
-                    log::info!("Loading shortcut: {}", shortcut_to_parse.command_name);
+//                     log::info!("Loading shortcut: {}", shortcut_to_parse.command_name);
 
-                    let tauri_shortcut: TauriShortcut = execution_facade
-                        .parse_shortcut(&shortcut_to_parse.key_combination)
-                        .expect("Failed to create TauriShortcut");
+//                     let tauri_shortcut: TauriShortcut = execution_facade
+//                         .parse_shortcut(&shortcut_to_parse.key_combination)
+//                         .expect("Failed to create TauriShortcut");
 
-                    log::info!("Tauri shortcut is: {:?}", tauri_shortcut);
+//                     log::info!("Tauri shortcut is: {:?}", tauri_shortcut);
 
-                    if shortcut == &tauri_shortcut {
-                        if let Err(e) =
-                            execution_facade.handle_shortcut_event(tauri_shortcut, event.state())
-                        {
-                            log::error!("Failed to handle shortcut event: {}", e);
-                        }
-                    }
-                } else {
-                    log::error!("No shortcut file found!");
-                }
-            },
-        )
-        .build()
-}
+//                     if shortcut == &tauri_shortcut {
+//                         if let Err(e) =
+//                             execution_facade.emit_shortcut_event(tauri_shortcut, event.state())
+//                         {
+//                             log::error!("Failed to handle shortcut event: {}", e);
+//                         }
+//                     }
+//                 } else {
+//                     log::error!("No shortcut file found!");
+//                 }
+//             },
+//         )
+//         .build()
+// }
 
 #[tauri::command]
 async fn save_shortcut(app_handle: AppHandle, payload: ShortcutParams) -> Result<(), String> {

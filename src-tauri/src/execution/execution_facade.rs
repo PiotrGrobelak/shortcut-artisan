@@ -1,9 +1,13 @@
+use std::fs::{self};
 use tauri::AppHandle;
 use tauri::Emitter;
 use tauri::Runtime;
+use tauri_plugin_global_shortcut::ShortcutEvent;
 use tauri_plugin_global_shortcut::{
     Code, GlobalShortcutExt, Modifiers, Shortcut as TauriShortcut, ShortcutState,
 };
+
+use crate::definition::shortcut::Shortcut;
 
 pub struct ExecutionFacade<R: Runtime> {
     app_handle: AppHandle<R>,
@@ -113,10 +117,54 @@ impl<R: Runtime> ExecutionFacade<R> {
             }
         }
     }
+    pub fn handle_shortcut_event(&self, shortcut: &TauriShortcut, event: ShortcutEvent) {
+        log::info!(
+            "Shortcut detected: {:?}, State: {:?}",
+            shortcut,
+            event.state()
+        );
 
-    pub fn handle_shortcut_event(
+        match self.load_and_check_shortcut(shortcut) {
+            Ok(true) => {
+                if let Err(e) = self.emit_shortcut_event(shortcut, event.state()) {
+                    log::error!("Failed to emit shortcut event: {}", e);
+                }
+            }
+            Ok(false) => {
+                log::info!("Shortcut didn't match current configuration");
+            }
+            Err(e) => {
+                log::error!("Error processing shortcut: {}", e);
+            }
+        }
+    }
+
+    fn load_and_check_shortcut(&self, shortcut: &TauriShortcut) -> Result<bool, String> {
+        let home_dir = dirs::home_dir().ok_or("Failed to get home directory")?;
+        let file_path = home_dir.join(".shortcut-artisan").join("settings.json");
+
+        if !file_path.exists() {
+            return Err("No shortcut file found!".to_string());
+        }
+
+        let content = fs::read_to_string(&file_path).map_err(|e| e.to_string())?;
+        let shortcut_config: Shortcut =
+            serde_json::from_str(&content).map_err(|e| e.to_string())?;
+
+        log::info!("Loading shortcut: {}", shortcut_config.command_name);
+
+        let tauri_shortcut = self
+            .parse_shortcut(&shortcut_config.key_combination)
+            .ok_or("Failed to create TauriShortcut")?;
+
+        log::info!("Tauri shortcut is: {:?}", tauri_shortcut);
+
+        Ok(shortcut == &tauri_shortcut)
+    }
+
+    pub fn emit_shortcut_event(
         &self,
-        shortcut: TauriShortcut,
+        shortcut: &TauriShortcut,
         state: ShortcutState,
     ) -> Result<(), String> {
         match state {

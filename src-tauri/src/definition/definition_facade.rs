@@ -1,5 +1,5 @@
 use crate::definition::shortcut::{Shortcut, ShortcutParams};
-use crate::execution::execution_facade::ExecutionFacade;
+use crate::execution::ExecutionFacade;
 use serde::{Deserialize, Serialize};
 use std::fs::{self, File, Permissions};
 use std::io::Write;
