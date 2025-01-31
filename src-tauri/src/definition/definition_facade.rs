@@ -12,15 +12,21 @@ use tauri_plugin_global_shortcut::{
     Code, GlobalShortcutExt, Modifiers, Shortcut as TauriShortcut, ShortcutState,
 };
 
+use super::shortcut_repository::ShortcutRepository;
 use uuid::Uuid;
 
 pub struct DefinitionFacade {
     app_handle: AppHandle,
+    shortcut_repository: ShortcutRepository,
 }
 
 impl DefinitionFacade {
-    pub fn new(app_handle: AppHandle) -> Self {
-        Self { app_handle }
+    pub fn new(app_handle: AppHandle) -> Result<Self, String> {
+        let shortcut_repository = ShortcutRepository::new()?;
+        Ok(Self {
+            app_handle,
+            shortcut_repository,
+        })
     }
 
     pub async fn save_shortcut(&self, shortcut: ShortcutParams) -> Result<(), String> {
@@ -32,7 +38,9 @@ impl DefinitionFacade {
             command_name: shortcut.name.clone(),
         };
 
-        self.save_to_disk(&shortcut)?;
+        self.shortcut_repository
+            .save(&shortcut)
+            .expect("Failed to save shortcut");
 
         let execution_facade = ExecutionFacade::new(self.app_handle.clone());
 
@@ -47,21 +55,11 @@ impl DefinitionFacade {
         Ok(())
     }
 
-    fn save_to_disk(&self, shortcut: &Shortcut) -> Result<(), String> {
-        let home_dir = dirs::home_dir().ok_or("Failed to get home directory")?;
-        let dir_path = home_dir.join(".shortcut-artisan");
+    pub fn get_current_shortcut(&self) -> Result<Shortcut, String> {
+        self.shortcut_repository.get_current()
+    }
 
-        fs::create_dir_all(&dir_path).map_err(|e| e.to_string())?;
-        fs::set_permissions(&dir_path, Permissions::from_mode(0o755)).map_err(|e| e.to_string())?;
-
-        let file_path = dir_path.join("settings.json");
-        log::info!("New shortcut save: {:?}", shortcut.command_name);
-
-        let json = serde_json::to_string(&shortcut).map_err(|e| e.to_string())?;
-
-        let mut file = File::create(file_path).map_err(|e| e.to_string())?;
-
-        file.write_all(json.as_bytes()).map_err(|e| e.to_string())?;
-        Ok(())
+    pub async fn delete_shortcut(&self, id: &str) -> Result<(), String> {
+        self.shortcut_repository.delete(id)
     }
 }
