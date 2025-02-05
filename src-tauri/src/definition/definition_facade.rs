@@ -1,3 +1,4 @@
+use crate::config::AppConfig;
 use crate::definition::shortcut::{Shortcut, ShortcutParams};
 use crate::execution::ExecutionFacade;
 use serde::{Deserialize, Serialize};
@@ -60,6 +61,29 @@ impl DefinitionFacade {
     }
 
     pub async fn delete_shortcut(&self, id: &str) -> Result<(), String> {
+        if let Ok(shortcut) = self.shortcut_repository.get_current() {
+            if shortcut.id == id {
+                let execution_facade = ExecutionFacade::new(self.app_handle.clone());
+
+                if let Some(tauri_shortcut) =
+                    execution_facade.parse_shortcut(&shortcut.key_combination)
+                {
+                    if self
+                        .app_handle
+                        .global_shortcut()
+                        .is_registered(tauri_shortcut)
+                    {
+                        self.app_handle
+                            .global_shortcut()
+                            .unregister(tauri_shortcut)
+                            .map_err(|e| e.to_string())?;
+                    }
+                } else {
+                    log::error!("Failed to parse shortcut for deletion");
+                }
+            }
+        }
+
         self.shortcut_repository.delete(id)
     }
 }

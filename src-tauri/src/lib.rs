@@ -1,8 +1,10 @@
 pub mod analytics;
+pub mod config;
 pub mod definition;
 pub mod execution;
 
 use analytics::setup_logging_plugin;
+use config::AppConfig;
 use definition::definition_facade::DefinitionFacade;
 use definition::shortcut::{Shortcut, ShortcutParams};
 use execution::setup_global_shortcut_plugin;
@@ -10,9 +12,9 @@ use execution::ExecutionFacade;
 use serde::{Deserialize, Serialize};
 use std::fs::{self};
 use tauri::plugin::TauriPlugin;
-use tauri::Emitter;
 use tauri::Runtime;
 use tauri::{AppHandle, Manager};
+use tauri::{Config, Emitter};
 use tauri_plugin_global_shortcut::{
     Code, GlobalShortcutExt, Modifiers, Shortcut as TauriShortcut, ShortcutState,
 };
@@ -56,6 +58,8 @@ async fn save_shortcut(app_handle: AppHandle, payload: ShortcutParams) -> Result
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    AppConfig::init().expect("Failed to initialize config");
+
     tauri::Builder::default()
         .plugin(setup_logging_plugin())
         .plugin(setup_global_shortcut_plugin())

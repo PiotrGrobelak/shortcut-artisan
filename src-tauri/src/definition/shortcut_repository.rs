@@ -1,59 +1,66 @@
 use super::shortcut::Shortcut;
+use crate::config::AppConfig;
 use std::fs::{self, File, Permissions};
 use std::io::Write;
 use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 
-pub struct ShortcutRepository {
-    base_path: PathBuf,
-}
+pub struct ShortcutRepository;
 
 impl ShortcutRepository {
     pub fn new() -> Result<Self, String> {
-        let home_dir = dirs::home_dir().ok_or("Failed to get home directory")?;
-        let base_path = home_dir.join(".shortcut-artisan");
-
-        fs::create_dir_all(&base_path).map_err(|e| e.to_string())?;
-        fs::set_permissions(&base_path, Permissions::from_mode(0o755))
-            .map_err(|e| e.to_string())?;
-
-        Ok(Self { base_path })
+        Ok(Self)
     }
 
     pub fn save(&self, shortcut: &Shortcut) -> Result<(), String> {
-        let file_path = self.base_path.join("settings.json");
-        log::info!("Saving shortcut: {:?}", shortcut.command_name);
+        let config = AppConfig::global()
+            .lock()
+            .expect("Failed to lock config during save.");
+        let file_path = &config.settings_file;
 
-        if !file_path.exists() {
-            return Err("No shortcut file found".to_string());
-        }
+        let content = std::fs::read_to_string(file_path).map_err(|e| e.to_string())?;
 
-        let json = serde_json::to_string(&shortcut).map_err(|e| e.to_string())?;
-        let mut file = File::create(file_path).map_err(|e| e.to_string())?;
-        file.write_all(json.as_bytes()).map_err(|e| e.to_string())?;
+        let mut shortcuts: Vec<Shortcut> = serde_json::from_str(&content).unwrap_or_default();
+
+        shortcuts.push(shortcut.clone());
+
+        let json = serde_json::to_string(&shortcuts).map_err(|e| e.to_string())?;
+
+        std::fs::write(file_path, json).map_err(|e| e.to_string())?;
 
         Ok(())
     }
 
     pub fn get_current(&self) -> Result<Shortcut, String> {
-        let file_path = self.base_path.join("settings.json");
+        let config = AppConfig::global()
+            .lock()
+            .expect("Failed to lock config during retrieval.");
+        let content = std::fs::read_to_string(&config.settings_file).map_err(|e| e.to_string())?;
 
-        if !file_path.exists() {
-            return Err("No shortcut file found".to_string());
-        }
-
-        let content = fs::read_to_string(file_path).map_err(|e| e.to_string())?;
         serde_json::from_str(&content).map_err(|e| e.to_string())
     }
 
     pub fn delete(&self, id: &str) -> Result<(), String> {
-        let current = self.get_current()?;
+        let config = AppConfig::global()
+            .lock()
+            .expect("Failed to lock config during deletion.");
+        let file_path = &config.settings_file;
 
-        if current.id == id {
-            let file_path = self.base_path.join("settings.json");
-            fs::remove_file(file_path).map_err(|e| e.to_string())?;
+        let content = std::fs::read_to_string(file_path).map_err(|e| e.to_string())?;
+
+        let mut shortcuts: Vec<Shortcut> =
+            serde_json::from_str(&content).map_err(|e| e.to_string())?;
+
+        if let Some(index) = shortcuts.iter().position(|s| s.id == id) {
+            shortcuts.remove(index);
+
+            let json = serde_json::to_string(&shortcuts).map_err(|e| e.to_string())?;
+
+            std::fs::write(file_path, json).map_err(|e| e.to_string())?;
+
+            Ok(())
+        } else {
+            Err(format!("Shortcut with id {} not found", id))
         }
-
-        Ok(())
     }
 }

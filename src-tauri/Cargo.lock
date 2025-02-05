@@ -97,6 +97,7 @@ dependencies = [
  "dirs 4.0.0",
  "env_logger",
  "log",
+ "once_cell",
  "serde",
  "serde_json",
  "tauri",
