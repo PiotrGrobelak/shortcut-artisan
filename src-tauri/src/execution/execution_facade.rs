@@ -7,6 +7,7 @@ use tauri_plugin_global_shortcut::{
     Code, GlobalShortcutExt, Modifiers, Shortcut as TauriShortcut, ShortcutState,
 };
 
+use crate::config::AppConfig;
 use crate::definition::shortcut::Shortcut;
 
 pub struct ExecutionFacade<R: Runtime> {
@@ -140,26 +141,30 @@ impl<R: Runtime> ExecutionFacade<R> {
     }
 
     fn load_and_check_shortcut(&self, shortcut: &TauriShortcut) -> Result<bool, String> {
-        let home_dir = dirs::home_dir().ok_or("Failed to get home directory")?;
-        let file_path = home_dir.join(".shortcut-artisan").join("settings.json");
+        let config = AppConfig::global().lock().unwrap();
+        let file_path = &config.settings_file;
 
         if !file_path.exists() {
             return Err("No shortcut file found!".to_string());
         }
 
-        let content = fs::read_to_string(&file_path).map_err(|e| e.to_string())?;
-        let shortcut_config: Shortcut =
-            serde_json::from_str(&content).map_err(|e| e.to_string())?;
+        let content = fs::read_to_string(file_path).map_err(|e| e.to_string())?;
+        let shortcuts: Vec<Shortcut> = serde_json::from_str(&content).map_err(|e| e.to_string())?;
 
-        log::info!("Loading shortcut: {}", shortcut_config.command_name);
+        for shortcut_config in shortcuts {
+            log::info!("Checking shortcut: {}", shortcut_config.command_name);
 
-        let tauri_shortcut = self
-            .parse_shortcut(&shortcut_config.key_combination)
-            .ok_or("Failed to create TauriShortcut")?;
+            if let Some(tauri_shortcut) = self.parse_shortcut(&shortcut_config.key_combination) {
+                log::info!("Comparing Tauri shortcut: {:?}", tauri_shortcut);
 
-        log::info!("Tauri shortcut is: {:?}", tauri_shortcut);
+                if shortcut == &tauri_shortcut {
+                    return Ok(true);
+                }
+            }
+        }
 
-        Ok(shortcut == &tauri_shortcut)
+        // No matching shortcut found
+        Ok(false)
     }
 
     pub fn emit_shortcut_event(

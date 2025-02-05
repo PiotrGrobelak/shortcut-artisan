@@ -20,29 +20,51 @@ use tauri_plugin_global_shortcut::{
 };
 
 fn load_shortcuts_at_startup(app: &tauri::App) -> Result<(), String> {
-    let home_dir = dirs::home_dir().ok_or("Failed to get home directory")?;
-    let file_path = home_dir.join(".shortcut-artisan").join("settings.json");
+    let config = AppConfig::global().lock().unwrap();
+    let file_path = &config.settings_file;
 
     if file_path.exists() {
-        let content = fs::read_to_string(&file_path).map_err(|e| e.to_string())?;
-        let shortcut: Shortcut = serde_json::from_str(&content).map_err(|e| e.to_string())?;
+        let content = fs::read_to_string(file_path).map_err(|e| e.to_string())?;
+        let shortcuts: Vec<Shortcut> = serde_json::from_str(&content).map_err(|e| e.to_string())?;
 
-        log::info!("Loading shortcut: {}", shortcut.command_name);
-
-        let rt = tokio::runtime::Runtime::new().map_err(|e| e.to_string())?;
+        if shortcuts.is_empty() {
+            log::info!("No shortcuts found to load");
+            return Ok(());
+        }
 
         let execution_facade = ExecutionFacade::new(app.handle().clone());
 
-        let tauri_shortcut = execution_facade
-            .parse_shortcut(&shortcut.key_combination)
-            .expect("Failed to create TauriShortcut");
+        let rt = tokio::runtime::Runtime::new().map_err(|e| e.to_string())?;
 
-        rt.block_on(async {
-            execution_facade
-                .register_system_shortcut(tauri_shortcut)
-                .await
-                .map_err(|e| e.to_string())
-        })?;
+        for shortcut in shortcuts {
+            log::info!("Loading shortcut: {}", shortcut.command_name);
+
+            let tauri_shortcut = execution_facade
+                .parse_shortcut(&shortcut.key_combination)
+                .ok_or_else(|| {
+                    format!(
+                        "Failed to create TauriShortcut for {}",
+                        shortcut.command_name
+                    )
+                })?;
+
+            rt.block_on(async {
+                execution_facade
+                    .register_system_shortcut(tauri_shortcut)
+                    .await
+                    .map_err(|e| {
+                        format!(
+                            "Failed to register shortcut {}: {}",
+                            shortcut.command_name, e
+                        )
+                    })
+            })?;
+
+            log::info!(
+                "Successfully registered shortcut: {}",
+                shortcut.command_name
+            );
+        }
     } else {
         log::error!("No shortcut file found!");
     }
@@ -56,6 +78,12 @@ async fn save_shortcut(app_handle: AppHandle, payload: ShortcutParams) -> Result
     facade.save_shortcut(payload).await
 }
 
+#[tauri::command]
+async fn delete_shortcut(app_handle: AppHandle, id: String) -> Result<(), String> {
+    let facade = DefinitionFacade::new(app_handle)?;
+    facade.delete_shortcut(&id).await
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     AppConfig::init().expect("Failed to initialize config");
@@ -63,7 +91,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(setup_logging_plugin())
         .plugin(setup_global_shortcut_plugin())
-        .invoke_handler(tauri::generate_handler![save_shortcut])
+        .invoke_handler(tauri::generate_handler![save_shortcut, delete_shortcut])
         .setup(|app| {
             log::info!("Setup started!");
 
