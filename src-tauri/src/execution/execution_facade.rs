@@ -12,11 +12,17 @@ use crate::config::AppConfig;
 
 pub struct ExecutionFacade<R: Runtime> {
     app_handle: AppHandle<R>,
+    shortcut_cache: Vec<ExecutionShortcut>,
 }
 
 impl<R: Runtime> ExecutionFacade<R> {
     pub fn new(app_handle: AppHandle<R>) -> Self {
-        Self { app_handle }
+        let shortcuts =
+            Self::load_shortcuts_from_file().expect(("Failed to load shortcuts from file"));
+        Self {
+            app_handle,
+            shortcut_cache: shortcuts,
+        }
     }
 
     pub fn parse_shortcut(&self, key_combination: &str) -> Option<TauriShortcut> {
@@ -132,78 +138,31 @@ impl<R: Runtime> ExecutionFacade<R> {
     }
 
     fn load_and_check_shortcut(&self, shortcut: &TauriShortcut) -> Result<bool, String> {
-        let config = AppConfig::global().lock().unwrap();
-        let file_path = &config.settings_file;
-
-        if !file_path.exists() {
-            return Err("No shortcut file found!".to_string());
-        }
-
-        let content = fs::read_to_string(file_path).map_err(|e| e.to_string())?;
-        let shortcuts: Vec<ExecutionShortcut> =
-            serde_json::from_str(&content).map_err(|e| e.to_string())?;
-
-        for shortcut_config in shortcuts {
-            log::info!("Checking shortcut: {}", shortcut_config.command_name);
-
+        for shortcut_config in &self.shortcut_cache {
             if let Some(tauri_shortcut) = self.parse_shortcut(&shortcut_config.key_combination) {
-                log::info!("Comparing Tauri shortcut: {:?}", tauri_shortcut);
-
                 if shortcut == &tauri_shortcut {
                     return Ok(true);
                 }
             }
         }
-
         Ok(false)
     }
 
     pub fn load_shortcuts_at_startup(&self) -> Result<(), String> {
-        let config = AppConfig::global().lock().unwrap();
-        let file_path = &config.settings_file;
+        for shortcut in &self.shortcut_cache {
+            let tauri_shortcut = self
+                .parse_shortcut(&shortcut.key_combination)
+                .ok_or_else(|| format!("Invalid shortcut: {}", shortcut.command_name))?;
 
-        if !file_path.exists() {
-            log::error!("No shortcut file found!");
-            return Ok(());
+            self.register_system_shortcut(tauri_shortcut)?;
         }
-
-        let content = fs::read_to_string(file_path).map_err(|e| e.to_string())?;
-        let shortcuts: Vec<ExecutionShortcut> =
-            serde_json::from_str(&content).map_err(|e| e.to_string())?;
-
-        if shortcuts.is_empty() {
-            log::info!("No shortcuts found to load");
-            return Ok(());
-        }
-
-        for shortcut in shortcuts {
-            log::info!("Loading shortcut: {}", shortcut.command_name);
-
-            let tauri_shortcut =
-                self.parse_shortcut(&shortcut.key_combination)
-                    .ok_or_else(|| {
-                        format!(
-                            "Failed to create TauriShortcut for {}",
-                            shortcut.command_name
-                        )
-                    })?;
-
-            self.register_system_shortcut(tauri_shortcut).map_err(|e| {
-                format!(
-                    "Failed to register shortcut {}: {}",
-                    shortcut.command_name, e
-                )
-            })?;
-
-            log::info!(
-                "Successfully registered shortcut: {}",
-                shortcut.command_name
-            );
-        }
-
         Ok(())
     }
-
+    fn load_shortcuts_from_file() -> Result<Vec<ExecutionShortcut>, String> {
+        let config = AppConfig::global().lock().unwrap();
+        let content = fs::read_to_string(&config.settings_file).map_err(|e| e.to_string())?;
+        serde_json::from_str(&content).map_err(|e| e.to_string())
+    }
     pub fn emit_shortcut_event(
         &self,
         shortcut: &TauriShortcut,
