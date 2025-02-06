@@ -1,3 +1,4 @@
+mod action;
 pub mod commands;
 pub mod definition_facade;
 pub mod shortcut;

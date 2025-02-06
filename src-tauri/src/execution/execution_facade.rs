@@ -9,6 +9,7 @@ use tauri_plugin_global_shortcut::{
 
 use super::execution_shortcut::ExecutionShortcut;
 use crate::config::AppConfig;
+use std::process::Command;
 
 pub struct ExecutionFacade<R: Runtime> {
     app_handle: AppHandle<R>,
@@ -18,7 +19,7 @@ pub struct ExecutionFacade<R: Runtime> {
 impl<R: Runtime> ExecutionFacade<R> {
     pub fn new(app_handle: AppHandle<R>) -> Self {
         let shortcuts =
-            Self::load_shortcuts_from_file().expect(("Failed to load shortcuts from file"));
+            Self::load_shortcuts_from_file().expect("Failed to load shortcuts from file");
         Self {
             app_handle,
             shortcut_cache: shortcuts,
@@ -171,6 +172,12 @@ impl<R: Runtime> ExecutionFacade<R> {
         match state {
             ShortcutState::Pressed => {
                 log::info!("Shortcut pressed: {:?}", shortcut);
+
+                Command::new("xdg-open")
+                    .arg("/home/kasabatta/Downloads")
+                    .spawn()
+                    .map_err(|e| e.to_string())?;
+
                 return self
                     .app_handle
                     .emit("shortcut-triggered", "Shortcut Pressed!")
