@@ -7,8 +7,8 @@ use tauri_plugin_global_shortcut::{
     Code, GlobalShortcutExt, Modifiers, Shortcut as TauriShortcut, ShortcutState,
 };
 
+use super::execution_shortcut::ExecutionShortcut;
 use crate::config::AppConfig;
-use crate::definition::shortcut::Shortcut;
 
 pub struct ExecutionFacade<R: Runtime> {
     app_handle: AppHandle<R>,
@@ -85,10 +85,7 @@ impl<R: Runtime> ExecutionFacade<R> {
         key_code.map(|code| TauriShortcut::new(Some(modifiers), code))
     }
 
-    pub async fn register_system_shortcut(
-        &self,
-        tauri_shortcut: TauriShortcut,
-    ) -> Result<(), String> {
+    pub fn register_system_shortcut(&self, tauri_shortcut: TauriShortcut) -> Result<(), String> {
         if self
             .app_handle
             .global_shortcut()
@@ -98,23 +95,17 @@ impl<R: Runtime> ExecutionFacade<R> {
             self.app_handle
                 .global_shortcut()
                 .unregister(tauri_shortcut)
-                .map_err(|e| e.to_string())
-                .expect("Failed to unregister shortcut");
+                .map_err(|e| e.to_string())?;
         }
 
-        match self
-            .app_handle
-            .global_shortcut()
-            .register(tauri_shortcut)
-            .map_err(|e| e.to_string())
-        {
+        match self.app_handle.global_shortcut().register(tauri_shortcut) {
             Ok(_) => {
-                log::info!("Successfully registered shortcut: {} ", tauri_shortcut,);
+                log::info!("Successfully registered shortcut: {}", tauri_shortcut);
                 Ok(())
             }
             Err(e) => {
-                log::error!("Failed to register shortcut: {} ", tauri_shortcut,);
-                Err(e)
+                log::error!("Failed to register shortcut: {}", tauri_shortcut);
+                Err(e.to_string())
             }
         }
     }
@@ -149,7 +140,8 @@ impl<R: Runtime> ExecutionFacade<R> {
         }
 
         let content = fs::read_to_string(file_path).map_err(|e| e.to_string())?;
-        let shortcuts: Vec<Shortcut> = serde_json::from_str(&content).map_err(|e| e.to_string())?;
+        let shortcuts: Vec<ExecutionShortcut> =
+            serde_json::from_str(&content).map_err(|e| e.to_string())?;
 
         for shortcut_config in shortcuts {
             log::info!("Checking shortcut: {}", shortcut_config.command_name);
@@ -163,8 +155,53 @@ impl<R: Runtime> ExecutionFacade<R> {
             }
         }
 
-        // No matching shortcut found
         Ok(false)
+    }
+
+    pub fn load_shortcuts_at_startup(&self) -> Result<(), String> {
+        let config = AppConfig::global().lock().unwrap();
+        let file_path = &config.settings_file;
+
+        if !file_path.exists() {
+            log::error!("No shortcut file found!");
+            return Ok(());
+        }
+
+        let content = fs::read_to_string(file_path).map_err(|e| e.to_string())?;
+        let shortcuts: Vec<ExecutionShortcut> =
+            serde_json::from_str(&content).map_err(|e| e.to_string())?;
+
+        if shortcuts.is_empty() {
+            log::info!("No shortcuts found to load");
+            return Ok(());
+        }
+
+        for shortcut in shortcuts {
+            log::info!("Loading shortcut: {}", shortcut.command_name);
+
+            let tauri_shortcut =
+                self.parse_shortcut(&shortcut.key_combination)
+                    .ok_or_else(|| {
+                        format!(
+                            "Failed to create TauriShortcut for {}",
+                            shortcut.command_name
+                        )
+                    })?;
+
+            self.register_system_shortcut(tauri_shortcut).map_err(|e| {
+                format!(
+                    "Failed to register shortcut {}: {}",
+                    shortcut.command_name, e
+                )
+            })?;
+
+            log::info!(
+                "Successfully registered shortcut: {}",
+                shortcut.command_name
+            );
+        }
+
+        Ok(())
     }
 
     pub fn emit_shortcut_event(

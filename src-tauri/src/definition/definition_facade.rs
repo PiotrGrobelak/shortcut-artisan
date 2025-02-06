@@ -49,9 +49,7 @@ impl DefinitionFacade {
             .parse_shortcut(&shortcut.key_combination)
             .expect("Failed to create shortcut");
 
-        execution_facade
-            .register_system_shortcut(tauri_shortcut)
-            .await?;
+        let _ = execution_facade.register_system_shortcut(tauri_shortcut);
 
         Ok(())
     }
