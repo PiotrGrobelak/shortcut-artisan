@@ -1,20 +1,20 @@
 export enum ActionType {
   // File & Folder Actions
-  OpenFolder,
-  OpenFile,
+  OpenFolder = "OpenFolder",
+  OpenFile = "OpenFile",
 
   // Application Control
-  OpenApplication,
-  QuitApplication,
-  HideApplication,
-  FocusApplication,
+  OpenApplication = "OpenApplication",
+  QuitApplication = "QuitApplication",
+  HideApplication = "HideApplication",
+  FocusApplication = "FocusApplication",
 
   // Window Management
-  MinimizeWindow,
-  MaximizeWindow,
+  MinimizeWindow = "MinimizeWindow",
+  MaximizeWindow = "MaximizeWindow",
 
   // Script Execution
-  RunShellScript,
+  RunShellScript = "RunShellScript",
 }
 
 export interface ActionParameters {

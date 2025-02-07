@@ -19,6 +19,7 @@ export default function ManageShortcuts() {
     const payload: ShortcutRequestPayload = {
       shortcut: savedShortcut,
       name: name,
+      description: "Shortcut to open the artisan console",
       actions: [
         {
           action_type: ActionType.OpenFolder,
@@ -30,6 +31,8 @@ export default function ManageShortcuts() {
     };
 
     try {
+      console.log("Sending shortcut:", payload);
+
       const response = await invoke("save_shortcut", {
         payload,
       });

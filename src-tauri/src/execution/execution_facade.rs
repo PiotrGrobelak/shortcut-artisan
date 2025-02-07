@@ -173,10 +173,62 @@ impl<R: Runtime> ExecutionFacade<R> {
             ShortcutState::Pressed => {
                 log::info!("Shortcut pressed: {:?}", shortcut);
 
-                Command::new("xdg-open")
-                    .arg("/home/kasabatta/Downloads")
-                    .spawn()
-                    .map_err(|e| e.to_string())?;
+                // if let Some(execution_shortcut) = self.shortcut_cache.iter().find(|s| {
+                //     if let Some(parsed_shortcut) = self.parse_shortcut(&s.key_combination) {
+                //         &parsed_shortcut == shortcut
+                //     } else {
+                //         false
+                //     }
+                // }) {
+                //     match execution_shortcut.action_type {
+                //         ActionType::OpenFolder => {
+                //             if let Some(path) = &execution_shortcut.action_params.path {
+                //                 Command::new("xdg-open")
+                //                     .arg(path)
+                //                     .spawn()
+                //                     .map_err(|e| e.to_string())?;
+                //             } else {
+                //                 log::error!("No path specified for OpenFolder action");
+                //                 return Err("No path specified for OpenFolder action".to_string());
+                //             }
+                //         }
+                //         ActionType::OpenFile => {
+                //             if let Some(path) = &execution_shortcut.action_params.path {
+                //                 Command::new("xdg-open")
+                //                     .arg(path)
+                //                     .spawn()
+                //                     .map_err(|e| e.to_string())?;
+                //             } else {
+                //                 log::error!("No path specified for OpenFile action");
+                //                 return Err("No path specified for OpenFile action".to_string());
+                //             }
+                //         }
+                //         ActionType::OpenApplication => {
+                //             if let Some(app_name) = &execution_shortcut.action_params.app_name {
+                //                 Command::new(app_name).spawn().map_err(|e| e.to_string())?;
+                //             }
+                //         }
+                //         ActionType::RunShellScript => {
+                //             if let Some(script) = &execution_shortcut.action_params.script {
+                //                 Command::new("sh")
+                //                     .arg("-c")
+                //                     .arg(script)
+                //                     .spawn()
+                //                     .map_err(|e| e.to_string())?;
+                //             }
+                //         }
+                //         // Handle other action types
+                //         _ => {
+                //             log::info!(
+                //                 "Action type {:?} doesn't require command execution",
+                //                 execution_shortcut.action_type
+                //             );
+                //         }
+                //     }
+                // } else {
+                //     log::error!("No matching shortcut found in cache");
+                //     return Err("No matching shortcut found in cache".to_string());
+                // }
 
                 return self
                     .app_handle
