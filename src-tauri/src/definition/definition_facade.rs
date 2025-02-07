@@ -1,5 +1,5 @@
 use crate::config::AppConfig;
-use crate::definition::shortcut::{Shortcut, ShortcutParams};
+use crate::definition::shortcut::{Shortcut, ShortcutRequestPayload};
 use crate::execution::ExecutionFacade;
 use serde::{Deserialize, Serialize};
 use std::fs::{self, File, Permissions};
@@ -30,13 +30,17 @@ impl DefinitionFacade {
         })
     }
 
-    pub async fn save_shortcut(&self, shortcut: ShortcutParams) -> Result<(), String> {
+    pub async fn save_shortcut(&self, shortcut: ShortcutRequestPayload) -> Result<(), String> {
         log::info!("Saving shortcut through facade: {}", shortcut.name);
 
         let shortcut = Shortcut {
             id: Uuid::new_v4().to_string(),
             key_combination: shortcut.shortcut.clone(),
             command_name: shortcut.name.clone(),
+            description: shortcut.description.clone(),
+            enabled: true, // TODO: Implement enabled
+            actions: shortcut.actions.clone(),
+            scope: None, // TODO: Implement scope
         };
 
         self.shortcut_repository

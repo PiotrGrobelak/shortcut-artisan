@@ -14,7 +14,9 @@ pub struct Shortcut {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct ShortcutParams {
+pub struct ShortcutRequestPayload {
     pub shortcut: String,
     pub name: String,
+    pub description: Option<String>,
+    pub actions: Vec<ShortcutAction>,
 }
