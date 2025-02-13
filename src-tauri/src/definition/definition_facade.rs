@@ -49,9 +49,16 @@ impl DefinitionFacade {
 
         let execution_facade = ExecutionFacade::new(self.app_handle.clone());
 
-        let tauri_shortcut = execution_facade
-            .parse_shortcut(&shortcut.key_combination)
-            .expect("Failed to create shortcut");
+        let tauri_shortcut = match execution_facade.parse_shortcut(&shortcut.key_combination) {
+            Some(shortcut) => shortcut,
+            None => {
+                log::error!(
+                    "Failed to parse shortcut combination: '{}'. Please check the key combination format.", 
+                    shortcut.key_combination
+                );
+                return Err("Invalid shortcut combination".to_string());
+            }
+        };
 
         let _ = execution_facade.register_system_shortcut(tauri_shortcut);
 
