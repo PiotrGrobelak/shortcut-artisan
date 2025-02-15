@@ -190,50 +190,53 @@ impl<R: Runtime> ExecutionFacade<R> {
                     }
                 }) {
                     log::debug!("Shortcut: {:?}", execution_shortcut);
-                    match execution_shortcut.action_type {
-                        ActionType::OpenFolder => {
-                            log::debug!("OpenFolder action: {:?}", execution_shortcut);
-                            if let Some(path) = &execution_shortcut.action_params.path {
-                                Command::new("xdg-open")
-                                    .arg(path)
-                                    .spawn()
-                                    .map_err(|e| e.to_string())?;
-                            } else {
-                                log::error!("No path specified for OpenFolder action");
-                                return Err("No path specified for OpenFolder action".to_string());
+                    for action in &execution_shortcut.actions {
+                        match action.action_type {
+                            ActionType::OpenFolder => {
+                                log::debug!("OpenFolder action: {:?}", action);
+                                if let Some(path) = &action.parameters.path {
+                                    Command::new("xdg-open")
+                                        .arg(path)
+                                        .spawn()
+                                        .map_err(|e| e.to_string())?;
+                                } else {
+                                    log::error!("No path specified for OpenFolder action");
+                                    return Err(
+                                        "No path specified for OpenFolder action".to_string()
+                                    );
+                                }
                             }
-                        }
-                        ActionType::OpenFile => {
-                            if let Some(path) = &execution_shortcut.action_params.path {
-                                Command::new("xdg-open")
-                                    .arg(path)
-                                    .spawn()
-                                    .map_err(|e| e.to_string())?;
-                            } else {
-                                log::error!("No path specified for OpenFile action");
-                                return Err("No path specified for OpenFile action".to_string());
+                            ActionType::OpenFile => {
+                                if let Some(path) = &action.parameters.path {
+                                    Command::new("xdg-open")
+                                        .arg(path)
+                                        .spawn()
+                                        .map_err(|e| e.to_string())?;
+                                } else {
+                                    log::error!("No path specified for OpenFile action");
+                                    return Err("No path specified for OpenFile action".to_string());
+                                }
                             }
-                        }
-                        ActionType::OpenApplication => {
-                            if let Some(app_name) = &execution_shortcut.action_params.app_name {
-                                Command::new(app_name).spawn().map_err(|e| e.to_string())?;
+                            ActionType::OpenApplication => {
+                                if let Some(app_name) = &action.parameters.app_name {
+                                    Command::new(app_name).spawn().map_err(|e| e.to_string())?;
+                                }
                             }
-                        }
-                        ActionType::RunShellScript => {
-                            if let Some(script) = &execution_shortcut.action_params.script {
-                                Command::new("sh")
-                                    .arg("-c")
-                                    .arg(script)
-                                    .spawn()
-                                    .map_err(|e| e.to_string())?;
+                            ActionType::RunShellScript => {
+                                if let Some(script) = &action.parameters.script {
+                                    Command::new("sh")
+                                        .arg("-c")
+                                        .arg(script)
+                                        .spawn()
+                                        .map_err(|e| e.to_string())?;
+                                }
                             }
-                        }
-                        // Handle other action types
-                        _ => {
-                            log::info!(
-                                "Action type {:?} doesn't require command execution",
-                                execution_shortcut.action_type
-                            );
+                            _ => {
+                                log::info!(
+                                    "Action type {:?} doesn't require command execution",
+                                    action.action_type
+                                );
+                            }
                         }
                     }
                 } else {
