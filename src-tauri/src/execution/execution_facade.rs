@@ -7,9 +7,11 @@ use tauri_plugin_global_shortcut::{
     Code, GlobalShortcutExt, Modifiers, Shortcut as TauriShortcut, ShortcutState,
 };
 
-use super::execution_shortcut::ExecutionShortcut;
+use super::execution_shortcut::{ExecutionAction, ExecutionShortcut};
 use crate::config::AppConfig;
 use crate::definition::action::ActionType;
+use dirs;
+use std::path::Path;
 use std::process::Command;
 
 pub struct ExecutionFacade<R: Runtime> {
@@ -189,73 +191,95 @@ impl<R: Runtime> ExecutionFacade<R> {
                         false
                     }
                 }) {
-                    log::debug!("Shortcut: {:?}", execution_shortcut);
-                    for action in &execution_shortcut.actions {
-                        match action.action_type {
-                            ActionType::OpenFolder => {
-                                log::debug!("OpenFolder action: {:?}", action);
-                                if let Some(path) = &action.parameters.path {
-                                    Command::new("xdg-open")
-                                        .arg(path)
-                                        .spawn()
-                                        .map_err(|e| e.to_string())?;
-                                } else {
-                                    log::error!("No path specified for OpenFolder action");
-                                    return Err(
-                                        "No path specified for OpenFolder action".to_string()
-                                    );
-                                }
-                            }
-                            ActionType::OpenFile => {
-                                if let Some(path) = &action.parameters.path {
-                                    Command::new("xdg-open")
-                                        .arg(path)
-                                        .spawn()
-                                        .map_err(|e| e.to_string())?;
-                                } else {
-                                    log::error!("No path specified for OpenFile action");
-                                    return Err("No path specified for OpenFile action".to_string());
-                                }
-                            }
-                            ActionType::OpenApplication => {
-                                if let Some(app_name) = &action.parameters.app_name {
-                                    Command::new(app_name).spawn().map_err(|e| e.to_string())?;
-                                }
-                            }
-                            ActionType::RunShellScript => {
-                                if let Some(script) = &action.parameters.script {
-                                    Command::new("sh")
-                                        .arg("-c")
-                                        .arg(script)
-                                        .spawn()
-                                        .map_err(|e| e.to_string())?;
-                                }
-                            }
-                            _ => {
-                                log::info!(
-                                    "Action type {:?} doesn't require command execution",
-                                    action.action_type
-                                );
-                            }
-                        }
-                    }
+                    log::info!("Shortcut: {:?}", execution_shortcut.key_combination);
+                    self.execute_actions(&execution_shortcut.actions)?;
                 } else {
                     log::error!("No matching shortcut found in cache");
                     return Err("No matching shortcut found in cache".to_string());
                 }
 
-                return self
-                    .app_handle
+                self.app_handle
                     .emit("shortcut-triggered", "Shortcut Pressed!")
-                    .map_err(|e| e.to_string());
+                    .map_err(|e| e.to_string())
             }
             ShortcutState::Released => {
                 log::info!("Shortcut released: {:?}", shortcut);
-                return self
-                    .app_handle
+                self.app_handle
                     .emit("shortcut-triggered", "Shortcut Released!")
-                    .map_err(|e| e.to_string());
+                    .map_err(|e| e.to_string())
             }
         }
+    }
+
+    fn execute_actions(&self, actions: &[ExecutionAction]) -> Result<(), String> {
+        for action in actions {
+            match action.action_type {
+                ActionType::OpenFolder => {
+                    log::info!(
+                        "OpenFolder action: {:?} : {:?}",
+                        action.action_type,
+                        action.parameters.path
+                    );
+                    if let Some(path) = &action.parameters.path {
+                        let expanded_path = if path.starts_with('~') {
+                            if let Some(home_dir) = dirs::home_dir() {
+                                home_dir.join(&path[2..]).to_string_lossy().to_string()
+                            } else {
+                                path.to_string()
+                            }
+                        } else {
+                            path.to_string()
+                        };
+
+                        Command::new("xdg-open")
+                            .arg(&expanded_path)
+                            .spawn()
+                            .map_err(|e| {
+                                log::error!(
+                                    "Failed to execute xdg-open for {}: {}",
+                                    expanded_path,
+                                    e
+                                );
+                                e.to_string()
+                            })?;
+                    } else {
+                        log::error!("No path specified for OpenFolder action");
+                        return Err("No path specified for OpenFolder action".to_string());
+                    }
+                }
+                ActionType::OpenFile => {
+                    if let Some(path) = &action.parameters.path {
+                        Command::new("xdg-open")
+                            .arg(path)
+                            .spawn()
+                            .map_err(|e| e.to_string())?;
+                    } else {
+                        log::error!("No path specified for OpenFile action");
+                        return Err("No path specified for OpenFile action".to_string());
+                    }
+                }
+                ActionType::OpenApplication => {
+                    if let Some(app_name) = &action.parameters.app_name {
+                        Command::new(app_name).spawn().map_err(|e| e.to_string())?;
+                    }
+                }
+                ActionType::RunShellScript => {
+                    if let Some(script) = &action.parameters.script {
+                        Command::new("sh")
+                            .arg("-c")
+                            .arg(script)
+                            .spawn()
+                            .map_err(|e| e.to_string())?;
+                    }
+                }
+                _ => {
+                    log::info!(
+                        "Action type {:?} doesn't require command execution",
+                        action.action_type
+                    );
+                }
+            }
+        }
+        Ok(())
     }
 }
