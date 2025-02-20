@@ -18,16 +18,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { invoke } from "@tauri-apps/api/core";
 import { ActionParameters, ActionType } from "./model/ShortcutAction.model";
 
-
-
 export default function ManageShortcuts() {
   const [shortcut, setShortcut] = useState<string[]>([]);
   const [savedShortcut, setSavedShortcut] = useState("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isFocused, setIsFocused] = useState(false);
-  const [actionType, setActionType] = useState<ActionType>(ActionType.OpenFolder);
-  const [actionParams, setActionParams] = useState<ActionParameters | null>();
+  const [actionType, setActionType] = useState<ActionType>(
+    ActionType.OpenFolder
+  );
+  const [actionParams, setActionParams] = useState<ActionParameters>({
+    path: "",
+    app_name: "",
+    script: "",
+  });
 
   const divRef = useRef<HTMLDivElement>(null);
 
@@ -35,7 +39,7 @@ export default function ManageShortcuts() {
     setActionType(value);
   };
 
-  const handleParamChange = (param: string, value: string) => {
+  const handleParamChange = (param: keyof ActionParameters, value: string) => {
     setActionParams((prev) => ({
       ...prev,
       [param]: value,
@@ -90,7 +94,11 @@ export default function ManageShortcuts() {
     setSavedShortcut("");
     setName("");
     setActionType(ActionType.OpenFolder);
-    setActionParams(null);
+    setActionParams({
+      path: "",
+      app_name: "",
+      script: "",
+    });
   };
 
   const confirmShortcut = () => {
@@ -132,13 +140,9 @@ export default function ManageShortcuts() {
     <div className="min-h-screen p-8">
       <div className="grid grid-cols-2 gap-24 mt-8 relative">
         <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-center">
-            Shortcuts List
-          </h2>
+          <h2 className="text-2xl font-bold text-center">Shortcuts List</h2>
           <ul className="space-y-4">
-            <li>
-              Shortcut Item
-            </li>
+            <li>Shortcut Item</li>
           </ul>
         </div>
         {/* Vertical divider */}
@@ -194,8 +198,8 @@ export default function ManageShortcuts() {
                 <div className="space-y-2">
                   <Label>Action Type</Label>
                   <Select
-                    value={actionType }  
-                    onValueChange={handleActionTypeChange}  
+                    value={actionType}
+                    onValueChange={handleActionTypeChange}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select action type" />
@@ -225,7 +229,9 @@ export default function ManageShortcuts() {
                       type="text"
                       placeholder="Enter path"
                       value={actionParams?.path}
-                      onChange={(e) => handleParamChange("path", e.target.value)}
+                      onChange={(e) =>
+                        handleParamChange("path", e.target.value)
+                      }
                     />
                   </div>
                 )}
