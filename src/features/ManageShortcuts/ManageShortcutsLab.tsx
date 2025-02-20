@@ -16,29 +16,22 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { invoke } from "@tauri-apps/api/core";
+import { ActionParameters, ActionType } from "./model/ShortcutAction.model";
 
-const ActionType = {
-  OpenFolder: "OpenFolder",
-  OpenFile: "OpenFile",
-  OpenApplication: "OpenApplication",
-  RunShellScript: "RunShellScript",
-};
+
 
 export default function ManageShortcuts() {
   const [shortcut, setShortcut] = useState<string[]>([]);
   const [savedShortcut, setSavedShortcut] = useState("");
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [isFocused, setIsFocused] = useState(false);
-  const [actionType, setActionType] = useState(ActionType.OpenFolder);
-  const [actionParams, setActionParams] = useState({
-    path: "",
-    app_name: "",
-    script: "",
-  });
+  const [actionType, setActionType] = useState<ActionType>(ActionType.OpenFolder);
+  const [actionParams, setActionParams] = useState<ActionParameters | null>();
 
   const divRef = useRef<HTMLDivElement>(null);
 
-  const handleActionTypeChange = (value: string) => {
+  const handleActionTypeChange = (value: ActionType) => {
     setActionType(value);
   };
 
@@ -58,7 +51,7 @@ export default function ManageShortcuts() {
     const payload = {
       shortcut: savedShortcut,
       name: name,
-      description: "Custom shortcut configuration",
+      description: description,
       actions: [action],
     };
 
@@ -97,11 +90,7 @@ export default function ManageShortcuts() {
     setSavedShortcut("");
     setName("");
     setActionType(ActionType.OpenFolder);
-    setActionParams({
-      path: "",
-      app_name: "",
-      script: "",
-    });
+    setActionParams(null);
   };
 
   const confirmShortcut = () => {
@@ -114,19 +103,19 @@ export default function ManageShortcuts() {
       actionType === ActionType.OpenFolder ||
       actionType === ActionType.OpenFile
     ) {
-      if (!actionParams.path) {
+      if (!actionParams?.path) {
         alert("Please enter a path");
         return;
       }
     } else if (
       actionType === ActionType.OpenApplication &&
-      !actionParams.app_name
+      !actionParams?.app_name
     ) {
       alert("Please enter an application name");
       return;
     } else if (
       actionType === ActionType.RunShellScript &&
-      !actionParams.script
+      !actionParams?.script
     ) {
       alert("Please enter a shell script");
       return;
@@ -140,119 +129,143 @@ export default function ManageShortcuts() {
   }, [shortcut]);
 
   return (
-    <div className="min-h-screen p-8 space-y-8">
-      <div className="max-w-2xl mx-auto space-y-6">
-        <h1 className="text-2xl font-bold text-center">
-          Shortcut Configuration
-        </h1>
+    <div className="min-h-screen p-8">
+      <div className="grid grid-cols-2 gap-24 mt-8 relative">
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-center">
+            Shortcuts List
+          </h2>
+          <ul className="space-y-4">
+            <li>
+              Shortcut Item
+            </li>
+          </ul>
+        </div>
+        {/* Vertical divider */}
+        <div className="absolute left-1/2 top-0 bottom-0 w-[1px] bg-black"></div>
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-center">
+            Shortcut Configuration
+          </h2>
 
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Shortcut Name</Label>
-            <Input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter shortcut name"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Keyboard Shortcut</Label>
-            <div
-              ref={divRef}
-              tabIndex={0}
-              className={`border rounded-md p-4 min-h-[40px] cursor-pointer
-                ${isFocused ? "border-blue-500 ring-2 ring-blue-200" : "border-gray-200"}
-                ${savedShortcut ? "text-black" : "text-gray-400"}`}
-              onKeyDown={handleKeyDown}
-              onKeyUp={handleKeyUp}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-            >
-              {savedShortcut || "Click here and press keys to set shortcut"}
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Shortcut Name</Label>
+              <Input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter shortcut name"
+              />
             </div>
-          </div>
 
-          <Card className="w-full">
-            <CardHeader>
-              <CardTitle>Action Configuration</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Action Type</Label>
-                <Select
-                  value={actionType}
-                  onValueChange={handleActionTypeChange}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select action type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={ActionType.OpenFolder}>
-                      Open Folder
-                    </SelectItem>
-                    <SelectItem value={ActionType.OpenFile}>
-                      Open File
-                    </SelectItem>
-                    <SelectItem value={ActionType.OpenApplication}>
-                      Open Application
-                    </SelectItem>
-                    <SelectItem value={ActionType.RunShellScript}>
-                      Run Shell Script
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+            <div className="space-y-2">
+              <Label>Shortcut Description</Label>
+              <Input
+                type="text"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Enter shortcut description"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Keyboard Shortcut</Label>
+              <div
+                ref={divRef}
+                tabIndex={0}
+                className={`border rounded-md p-4 min-h-[40px] cursor-pointer
+                  ${isFocused ? "border-blue-500 ring-2 ring-blue-200" : "border-gray-200"}
+                  ${savedShortcut ? "text-black" : "text-gray-400"}`}
+                onKeyDown={handleKeyDown}
+                onKeyUp={handleKeyUp}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+              >
+                {savedShortcut || "Click here and press keys to set shortcut"}
               </div>
+            </div>
 
-              {(actionType === ActionType.OpenFolder ||
-                actionType === ActionType.OpenFile) && (
+            <Card className="w-full">
+              <CardHeader>
+                <CardTitle>Action Configuration</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Path</Label>
-                  <Input
-                    type="text"
-                    placeholder="Enter path"
-                    value={actionParams.path}
-                    onChange={(e) => handleParamChange("path", e.target.value)}
-                  />
+                  <Label>Action Type</Label>
+                  <Select
+                    value={actionType }  
+                    onValueChange={handleActionTypeChange}  
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select action type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ActionType.OpenFolder}>
+                        Open Folder
+                      </SelectItem>
+                      <SelectItem value={ActionType.OpenFile}>
+                        Open File
+                      </SelectItem>
+                      <SelectItem value={ActionType.OpenApplication}>
+                        Open Application
+                      </SelectItem>
+                      <SelectItem value={ActionType.RunShellScript}>
+                        Run Shell Script
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              )}
 
-              {actionType === ActionType.OpenApplication && (
-                <div className="space-y-2">
-                  <Label>Application Name</Label>
-                  <Input
-                    type="text"
-                    placeholder="Enter application name"
-                    value={actionParams.app_name}
-                    onChange={(e) =>
-                      handleParamChange("app_name", e.target.value)
-                    }
-                  />
-                </div>
-              )}
+                {(actionType === ActionType.OpenFolder ||
+                  actionType === ActionType.OpenFile) && (
+                  <div className="space-y-2">
+                    <Label>Path</Label>
+                    <Input
+                      type="text"
+                      placeholder="Enter path"
+                      value={actionParams?.path}
+                      onChange={(e) => handleParamChange("path", e.target.value)}
+                    />
+                  </div>
+                )}
 
-              {actionType === ActionType.RunShellScript && (
-                <div className="space-y-2">
-                  <Label>Shell Script</Label>
-                  <Input
-                    type="text"
-                    placeholder="Enter shell script"
-                    value={actionParams.script}
-                    onChange={(e) =>
-                      handleParamChange("script", e.target.value)
-                    }
-                  />
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                {actionType === ActionType.OpenApplication && (
+                  <div className="space-y-2">
+                    <Label>Application Name</Label>
+                    <Input
+                      type="text"
+                      placeholder="Enter application name"
+                      value={actionParams?.app_name}
+                      onChange={(e) =>
+                        handleParamChange("app_name", e.target.value)
+                      }
+                    />
+                  </div>
+                )}
 
-          <div className="flex justify-end space-x-4 pt-4">
-            <Button variant="outline" onClick={clearShortcut}>
-              Clear All
-            </Button>
-            <Button onClick={confirmShortcut}>Save Shortcut</Button>
+                {actionType === ActionType.RunShellScript && (
+                  <div className="space-y-2">
+                    <Label>Shell Script</Label>
+                    <Input
+                      type="text"
+                      placeholder="Enter shell script"
+                      value={actionParams?.script}
+                      onChange={(e) =>
+                        handleParamChange("script", e.target.value)
+                      }
+                    />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <div className="flex justify-end space-x-4 pt-4">
+              <Button variant="outline" onClick={clearShortcut}>
+                Clear All
+              </Button>
+              <Button onClick={confirmShortcut}>Save Shortcut</Button>
+            </div>
           </div>
         </div>
       </div>
