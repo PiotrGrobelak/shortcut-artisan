@@ -86,3 +86,5 @@ impl DefinitionFacade {
         self.shortcut_repository.delete(id)
     }
 }
+
+
