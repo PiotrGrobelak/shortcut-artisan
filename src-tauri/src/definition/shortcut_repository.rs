@@ -1,9 +1,5 @@
 use super::shortcut::Shortcut;
 use crate::config::AppConfig;
-use std::fs::{self, File, Permissions};
-use std::io::Write;
-use std::os::unix::fs::PermissionsExt;
-use std::path::PathBuf;
 
 pub struct ShortcutRepository;
 

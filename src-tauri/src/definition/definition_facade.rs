@@ -1,17 +1,7 @@
-use crate::config::AppConfig;
 use crate::definition::shortcut::{Shortcut, ShortcutRequestPayload};
 use crate::execution::ExecutionFacade;
-use serde::{Deserialize, Serialize};
-use std::fs::{self, File, Permissions};
-use std::io::Write;
-use std::os::unix::fs::PermissionsExt;
-use tauri::plugin::TauriPlugin;
 use tauri::AppHandle;
-use tauri::Emitter;
-use tauri::Runtime;
-use tauri_plugin_global_shortcut::{
-    Code, GlobalShortcutExt, Modifiers, Shortcut as TauriShortcut, ShortcutState,
-};
+use tauri_plugin_global_shortcut::GlobalShortcutExt;
 
 use super::shortcut_repository::ShortcutRepository;
 use uuid::Uuid;

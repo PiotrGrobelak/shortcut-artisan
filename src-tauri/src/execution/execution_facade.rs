@@ -11,7 +11,6 @@ use super::execution_shortcut::{ExecutionAction, ExecutionShortcut};
 use crate::config::AppConfig;
 use crate::definition::action::ActionType;
 use dirs;
-use std::path::Path;
 use std::process::Command;
 
 pub struct ExecutionFacade<R: Runtime> {
