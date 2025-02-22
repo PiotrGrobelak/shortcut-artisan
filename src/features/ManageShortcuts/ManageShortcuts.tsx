@@ -16,7 +16,11 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { invoke } from "@tauri-apps/api/core";
-import { ActionParameters, ActionType } from "./model/ShortcutAction.model";
+import {
+  ActionType,
+  BaseParameters,
+  actionParameterRequirements,
+} from "./model/ShortcutAction.model";
 
 export default function ManageShortcuts() {
   const [shortcut, setShortcut] = useState<string[]>([]);
@@ -27,7 +31,8 @@ export default function ManageShortcuts() {
   const [actionType, setActionType] = useState<ActionType>(
     ActionType.OpenFolder
   );
-  const [actionParams, setActionParams] = useState<ActionParameters>({
+
+  const [actionParams, setActionParams] = useState<BaseParameters>({
     path: "",
     app_name: "",
     script: "",
@@ -35,43 +40,68 @@ export default function ManageShortcuts() {
 
   const divRef = useRef<HTMLDivElement>(null);
 
-  const handleActionTypeChange = (value: ActionType) => {
-    setActionType(value);
-  };
-
-  const handleParamChange = (param: keyof ActionParameters, value: string) => {
+  const handleParamChange = <T extends keyof BaseParameters>(
+    param: T,
+    value: BaseParameters[T]
+  ) => {
     setActionParams((prev) => ({
       ...prev,
       [param]: value,
     }));
   };
 
+  const validateShortcut = (): boolean => {
+    if (shortcut.length === 0 || name.trim() === "") {
+      alert("Please set a shortcut and enter a name");
+      return false;
+    }
+    return true;
+  };
+
+  const validateActionParams = (type: ActionType): boolean => {
+    const requiredParams = actionParameterRequirements[type].required;
+    const isValid = requiredParams.every(
+      (param) => actionParams[param] !== undefined && actionParams[param] !== ""
+    );
+
+    if (!isValid) {
+      const required = actionParameterRequirements[type].required.join(", ");
+      alert(`Please fill in required parameters: ${required}`);
+      return false;
+    }
+
+    return true;
+  };
+
   const sendShortcut = async () => {
-    const action = {
-      action_type: actionType,
-      parameters: actionParams,
-    };
+    if (!validateShortcut() || !validateActionParams(actionType)) {
+      return;
+    }
 
     const payload = {
       shortcut: savedShortcut,
-      name: name,
-      description: description,
-      actions: [action],
+      name,
+      description,
+      actions: [
+        {
+          action_type: actionType,
+          parameters: actionParams,
+        },
+      ],
     };
 
     try {
-      console.log("Shortcut configuration:", payload);
-      // Here you would typically send the data to your backend
-      // For now we'll just log it
-      const response = await invoke("save_shortcut", {
-        payload,
-      });
-      console.log("response", response);
-      alert("Shortcut configuration saved (mock)");
+      const response = await invoke("save_shortcut", { payload });
+      console.log("Shortcut saved:", response);
+      clearShortcut();
     } catch (error) {
-      console.error("Error configuring shortcut:", error);
+      console.error("Error saving shortcut:", error);
       alert("Error saving shortcut: " + error);
     }
+  };
+
+  const handleActionTypeChange = (value: ActionType) => {
+    setActionType(value);
   };
 
   const handleKeyDown: KeyboardEventHandler<HTMLDivElement> = (event) => {
@@ -93,43 +123,13 @@ export default function ManageShortcuts() {
     setShortcut([]);
     setSavedShortcut("");
     setName("");
+    setDescription("");
     setActionType(ActionType.OpenFolder);
     setActionParams({
       path: "",
       app_name: "",
       script: "",
     });
-  };
-
-  const confirmShortcut = () => {
-    if (shortcut.length === 0 || name.trim() === "") {
-      alert("Please set a shortcut and enter a name");
-      return;
-    }
-
-    if (
-      actionType === ActionType.OpenFolder ||
-      actionType === ActionType.OpenFile
-    ) {
-      if (!actionParams?.path) {
-        alert("Please enter a path");
-        return;
-      }
-    } else if (
-      actionType === ActionType.OpenApplication &&
-      !actionParams?.app_name
-    ) {
-      alert("Please enter an application name");
-      return;
-    } else if (
-      actionType === ActionType.RunShellScript &&
-      !actionParams?.script
-    ) {
-      alert("Please enter a shell script");
-      return;
-    }
-
-    sendShortcut();
   };
 
   useEffect(() => {
@@ -270,7 +270,7 @@ export default function ManageShortcuts() {
               <Button variant="outline" onClick={clearShortcut}>
                 Clear All
               </Button>
-              <Button onClick={confirmShortcut}>Save Shortcut</Button>
+              <Button onClick={sendShortcut}>Save Shortcut</Button>
             </div>
           </div>
         </div>

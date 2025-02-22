@@ -13,7 +13,7 @@ export enum ActionType {
   RunShellScript = "RunShellScript",
 }
 
-export interface ActionParameters {
+export interface BaseParameters {
   path?: string;
   source_path?: string;
   target_path?: string;
@@ -31,7 +31,35 @@ export interface ActionParameters {
   script?: string;
 }
 
+export const actionParameterRequirements = {
+  [ActionType.OpenFolder]: { required: ["path"] },
+  [ActionType.OpenFile]: { required: ["path"] },
+  [ActionType.OpenApplication]: { required: ["app_name"] },
+  [ActionType.QuitApplication]: { required: ["app_name"] },
+  [ActionType.HideApplication]: { required: ["app_name"] },
+  [ActionType.FocusApplication]: { required: ["app_name"] },
+  [ActionType.MinimizeWindow]: { required: ["window_width", "window_height"] },
+  [ActionType.MaximizeWindow]: { required: ["window_width", "window_height"] },
+  [ActionType.RunShellScript]: { required: ["script"] },
+} satisfies Record<ActionType, { required: (keyof BaseParameters)[] }>;
+
+export type ActionParameters = BaseParameters;
+
 export interface ShortcutAction {
   action_type: ActionType;
   parameters: ActionParameters;
 }
+
+export type ValidateParameters<T extends ActionType> = {
+  action_type: T;
+  parameters: Pick<
+    BaseParameters,
+    (typeof actionParameterRequirements)[T]["required"][number]
+  > &
+    Partial<
+      Omit<
+        BaseParameters,
+        (typeof actionParameterRequirements)[T]["required"][number]
+      >
+    >;
+};
