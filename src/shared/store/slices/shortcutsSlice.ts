@@ -1,11 +1,21 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { invoke } from "@tauri-apps/api/core";
+import { ShortcutAction } from "@/features/ManageShortcuts/model/ShortcutAction.model";
 
 interface Shortcut {
   id: string;
-  name: string;
-  combination: string;
+  key_combination: string;
+  command_name: string;
   description?: string;
+  enabled: boolean;
+  actions: ShortcutAction[];
+}
+
+interface CreateShortcutPayload {
+  shortcut: string;
+  name: string;
+  description?: string;
+  actions: ShortcutAction[];
 }
 
 interface ShortcutsState {
@@ -23,8 +33,13 @@ export const fetchShortcuts = createAsyncThunk(
 
 export const createShortcut = createAsyncThunk(
   "shortcuts/create",
-  async (shortcut: Omit<Shortcut, "id">) => {
-    return await invoke<Shortcut>("save_shortcut", { shortcut });
+  async (payload: CreateShortcutPayload, { rejectWithValue }) => {
+    try {
+      const response = await invoke<Shortcut>("save_shortcut", { payload });
+      return response;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
   }
 );
 
@@ -71,23 +86,22 @@ const shortcutsSlice = createSlice({
       }
     );
 
-    builder.addCase(
-      createShortcut.fulfilled,
-      (state: ShortcutsState, action) => {
-        state.items.push(action.payload);
-        state.loading = false;
-        state.error = null;
-      }
-    );
     builder.addCase(createShortcut.pending, (state: ShortcutsState) => {
       state.loading = true;
       state.error = null;
     });
     builder.addCase(
+      createShortcut.fulfilled,
+      (state: ShortcutsState, action) => {
+        state.items.push(action.payload);
+        state.loading = false;
+      }
+    );
+    builder.addCase(
       createShortcut.rejected,
       (state: ShortcutsState, action) => {
         state.loading = false;
-        state.error = action.error.message || "Failed to create shortcut";
+        state.error = action.payload as string;
       }
     );
 

@@ -15,14 +15,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { invoke } from "@tauri-apps/api/core";
 import {
   ActionType,
   BaseParameters,
   actionParameterRequirements,
 } from "./model/ShortcutAction.model";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/shared/store";
+import { createShortcut } from "@/shared/store/slices/shortcutsSlice";
 
 export default function ManageShortcuts() {
+  const dispatch = useDispatch<AppDispatch>();
+  const { loading, error } = useSelector((state: RootState) => state.shortcuts);
+
   const [shortcut, setShortcut] = useState<string[]>([]);
   const [savedShortcut, setSavedShortcut] = useState("");
   const [name, setName] = useState("");
@@ -91,12 +96,10 @@ export default function ManageShortcuts() {
     };
 
     try {
-      const response = await invoke("save_shortcut", { payload });
-      console.log("Shortcut saved:", response);
+      await dispatch(createShortcut(payload)).unwrap();
       clearShortcut();
     } catch (error) {
-      console.error("Error saving shortcut:", error);
-      alert("Error saving shortcut: " + error);
+      console.error("Error configuring shortcut:", error);
     }
   };
 
@@ -266,11 +269,20 @@ export default function ManageShortcuts() {
               </CardContent>
             </Card>
 
+            {loading && <div>Saving shortcut...</div>}
+            {error && <div className="text-red-500">Error: {error}</div>}
+
             <div className="flex justify-end space-x-4 pt-4">
-              <Button variant="outline" onClick={clearShortcut}>
+              <Button
+                variant="outline"
+                onClick={clearShortcut}
+                disabled={loading}
+              >
                 Clear All
               </Button>
-              <Button onClick={sendShortcut}>Save Shortcut</Button>
+              <Button onClick={sendShortcut} disabled={loading}>
+                {loading ? "Saving..." : "Save Shortcut"}
+              </Button>
             </div>
           </div>
         </div>
