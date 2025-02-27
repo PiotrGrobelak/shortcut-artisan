@@ -1,0 +1,9 @@
+---
+description: Backend rules across all Rust files
+globs: src-tauri/, *.rs, *.json
+---
+Prioritize logs
+- Use log:: for all logging operations.
+- Replace .expect() with log::error! for error handling.
+- Choose appropriate log levels (trace, debug, info, warn, error).
+- Avoid using println! for logging.
