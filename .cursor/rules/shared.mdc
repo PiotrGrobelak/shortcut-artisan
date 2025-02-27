@@ -1,0 +1,11 @@
+---
+description: Shared rules across all files
+globs: **/*
+---
+Prioritize error handling and edge cases
+ - Handle errors and edge cases at the beginning of functions.
+ - Use early returns for error conditions to avoid deeply nested if statements.
+ - Place the happy path last in the function for improved readability.
+ - Use guard clauses to handle preconditions and invalid states early.
+ - Implement proper error logging and user-friendly error messages.
+ - Consider using custom error types or error factories for consistent error handling.
