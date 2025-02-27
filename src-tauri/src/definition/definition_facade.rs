@@ -85,6 +85,10 @@ impl DefinitionFacade {
 
         self.shortcut_repository.delete(id)
     }
+
+    pub fn get_all_shortcuts(&self) -> Result<Vec<Shortcut>, String> {
+        self.shortcut_repository.get_all()
+    }
 }
 
 

@@ -26,8 +26,13 @@ interface ShortcutsState {
 
 export const fetchShortcuts = createAsyncThunk(
   "shortcuts/fetch-all",
-  async () => {
-    return await invoke<Shortcut[]>("get_shortcuts");
+  async (_, { rejectWithValue }) => {
+    try {
+      return await invoke<Shortcut[]>("get_shortcuts");
+    } catch (error) {
+      console.error("Failed to fetch shortcuts:", error);
+      return rejectWithValue(error);
+    }
   }
 );
 

@@ -5,7 +5,7 @@ pub mod execution;
 
 use analytics::setup_logging_plugin;
 use config::AppConfig;
-use definition::commands::{delete_shortcut, save_shortcut};
+use definition::commands::{delete_shortcut, save_shortcut, get_shortcuts};
 use execution::setup_global_shortcut_plugin;
 use execution::ExecutionFacade;
 
@@ -20,7 +20,7 @@ pub fn run() {
     if let Err(e) = tauri::Builder::default()
         .plugin(setup_logging_plugin())
         .plugin(setup_global_shortcut_plugin())
-        .invoke_handler(tauri::generate_handler![save_shortcut, delete_shortcut])
+        .invoke_handler(tauri::generate_handler![save_shortcut, delete_shortcut, get_shortcuts])
         .setup(|app| {
             log::info!("Setup started!");
 
