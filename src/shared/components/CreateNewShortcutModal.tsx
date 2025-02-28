@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, KeyboardEventHandler } from "react";
+import * as React from "react";
+import { useState, useRef, KeyboardEventHandler, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/shared/store";
 import { createShortcut } from "@/shared/store/slices/shortcutsSlice";
@@ -55,6 +56,10 @@ export function CreateNewShortcutModal({
     script: "",
   });
 
+  useEffect(() => {
+    setSavedShortcut(shortcut.join("+"));
+  }, [shortcut]);
+
   const handleParamChange = <T extends keyof BaseParameters>(
     param: T,
     value: BaseParameters[T]
@@ -90,7 +95,17 @@ export function CreateNewShortcutModal({
 
   const handleKeyDown: KeyboardEventHandler<HTMLDivElement> = (event) => {
     event.preventDefault();
-    const key = event.key.toUpperCase();
+
+    // Handle special keys
+    const keyMap: { [key: string]: string } = {
+      Control: "CTRL",
+      Alt: "ALT",
+      Shift: "SHIFT",
+      Meta: "CMD",
+    };
+
+    const key = keyMap[event.key] || event.key.toUpperCase();
+
     if (!shortcut.includes(key)) {
       setShortcut((prev) => [...prev, key]);
     }
@@ -101,6 +116,11 @@ export function CreateNewShortcutModal({
       divRef.current.blur();
     }
     setIsFocused(false);
+  };
+
+  const clearShortcut = () => {
+    setShortcut([]);
+    setSavedShortcut("");
   };
 
   const clearForm = () => {
@@ -157,9 +177,13 @@ export function CreateNewShortcutModal({
           <DialogTitle>Create New Shortcut</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 mt-4">
-          {/* Form content moved from ManageShortcuts */}
           <div className="space-y-2">
-            <Label>Shortcut Name</Label>
+            <div className="flex justify-between items-center">
+              <Label>Shortcut Name</Label>
+              <Button variant="ghost" size="sm" onClick={() => setName("")}>
+                Clear
+              </Button>
+            </div>
             <Input
               type="text"
               value={name}
@@ -169,7 +193,16 @@ export function CreateNewShortcutModal({
           </div>
 
           <div className="space-y-2">
-            <Label>Description</Label>
+            <div className="flex justify-between items-center">
+              <Label>Description</Label>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setDescription("")}
+              >
+                Clear
+              </Button>
+            </div>
             <Input
               type="text"
               value={description}
@@ -179,7 +212,12 @@ export function CreateNewShortcutModal({
           </div>
 
           <div className="space-y-2">
-            <Label>Keyboard Shortcut</Label>
+            <div className="flex justify-between items-center">
+              <Label>Keyboard Shortcut</Label>
+              <Button variant="ghost" size="sm" onClick={clearShortcut}>
+                Clear
+              </Button>
+            </div>
             <div
               ref={divRef}
               tabIndex={0}
@@ -191,16 +229,45 @@ export function CreateNewShortcutModal({
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
             >
-              {savedShortcut || "Click here and press keys to set shortcut"}
+              {savedShortcut ? (
+                <div className="flex items-center gap-2">
+                  {shortcut.map((key, index) => (
+                    <React.Fragment key={index}>
+                      <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm">
+                        {key}
+                      </span>
+                      {index < shortcut.length - 1 && (
+                        <span className="text-gray-500">+</span>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </div>
+              ) : (
+                "Click here and press keys to set shortcut"
+              )}
             </div>
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>Action Configuration</CardTitle>
+              <div className="flex justify-between items-center">
+                <CardTitle>Action Configuration</CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    setActionParams({
+                      path: "",
+                      app_name: "",
+                      script: "",
+                    })
+                  }
+                >
+                  Clear Parameters
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Action type selection and parameters */}
               <div className="space-y-2">
                 <Label>Action Type</Label>
                 <Select
@@ -220,7 +287,6 @@ export function CreateNewShortcutModal({
                 </Select>
               </div>
 
-              {/* Dynamic parameter inputs based on action type */}
               {(actionType === ActionType.OpenFolder ||
                 actionType === ActionType.OpenFile) && (
                 <div className="space-y-2">
@@ -265,8 +331,17 @@ export function CreateNewShortcutModal({
           </Card>
 
           <div className="flex justify-end space-x-2 pt-4">
-            <Button variant="outline" onClick={() => setIsOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                clearForm();
+                setIsOpen(false);
+              }}
+            >
               Cancel
+            </Button>
+            <Button variant="outline" onClick={clearForm}>
+              Clear All
             </Button>
             <Button onClick={handleSubmit}>Create Shortcut</Button>
           </div>
