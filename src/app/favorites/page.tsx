@@ -7,6 +7,7 @@ import {
   fetchShortcuts,
   deleteShortcut,
 } from "@/shared/store/slices/shortcutsSlice";
+import { CreateNewShortcutModal } from "@/shared/components/CreateNewShortcutModal";
 
 export default function FavoritesPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -41,9 +42,9 @@ export default function FavoritesPage() {
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Favorite Shortcuts</h1>
-          <button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-            Add Shortcut
-          </button>
+          <CreateNewShortcutModal
+            onSuccess={() => dispatch(fetchShortcuts())}
+          />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
