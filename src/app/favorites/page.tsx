@@ -8,6 +8,7 @@ import {
   deleteShortcut,
 } from "@/shared/store/slices/shortcutsSlice";
 import { CreateNewShortcutModal } from "@/shared/components/CreateNewShortcutModal";
+import { ShortcutCard } from "@/shared/components/ShortcutCard";
 
 export default function FavoritesPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -27,6 +28,11 @@ export default function FavoritesPage() {
     } catch (error) {
       console.error("Failed to delete shortcut:", error);
     }
+  };
+
+  const handleEdit = (id: string) => {
+    console.log("Edit shortcut:", id);
+    // TODO: Implement edit functionality
   };
 
   if (loading) {
@@ -49,36 +55,15 @@ export default function FavoritesPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {shortcuts.map((shortcut) => (
-            <div
+            <ShortcutCard
               key={shortcut.id}
-              className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow"
-            >
-              <div className="flex justify-between items-start mb-3">
-                <h3 className="font-medium">{shortcut.command_name}</h3>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
-                    {shortcut.key_combination}
-                  </span>
-                  <button className="text-gray-500 hover:text-gray-700">
-                    <span className="sr-only">Menu</span>⋮
-                  </button>
-                </div>
-              </div>
-              <p className="text-sm text-gray-500 mb-3">
-                {shortcut.description}
-              </p>
-              <div className="flex justify-end space-x-2">
-                <button className="text-sm text-blue-500 hover:text-blue-600">
-                  Edit
-                </button>
-                <button
-                  className="text-sm text-red-500 hover:text-red-600"
-                  onClick={() => handleDelete(shortcut.id)}
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
+              id={shortcut.id}
+              commandName={shortcut.command_name}
+              description={shortcut.description}
+              keyCombination={shortcut.key_combination}
+              onDelete={handleDelete}
+              onEdit={() => handleEdit(shortcut.id)}
+            />
           ))}
         </div>
       </div>
