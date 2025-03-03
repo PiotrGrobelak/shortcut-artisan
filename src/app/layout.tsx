@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navigation from "@/components/Navigation";
+import Navigation from "@/shared/components/Navigation";
 import { ReduxProvider } from "@/shared/providers/ReduxProvider";
 
 const geistSans = Geist({
@@ -25,13 +25,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className="h-full">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
       >
         <ReduxProvider>
-          <Navigation />
-          <main>{children}</main>
+          <div className="flex h-full">
+            <Navigation />
+            <main className="ml-24 flex-1">{children}</main>
+          </div>
         </ReduxProvider>
       </body>
     </html>
