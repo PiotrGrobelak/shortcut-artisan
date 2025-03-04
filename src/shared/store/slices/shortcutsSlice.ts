@@ -20,8 +20,12 @@ interface CreateShortcutPayload {
 
 interface ShortcutsState {
   items: Shortcut[];
-  loading: boolean;
+  listLoading: boolean;
+  detailLoading: boolean;
+  saveLoading: boolean;
+  deleteLoading: boolean;
   error: string | null;
+  currentShortcut?: Shortcut;
 }
 
 export const fetchShortcuts = createAsyncThunk(
@@ -56,9 +60,42 @@ export const deleteShortcut = createAsyncThunk(
   }
 );
 
+export const fetchShortcutById = createAsyncThunk(
+  "shortcuts/fetch-by-id",
+  async (id: string, { rejectWithValue }) => {
+    try {
+      return await invoke<Shortcut>("get_shortcut_by_id", { id });
+    } catch (error) {
+      console.error(`Failed to fetch shortcut with id ${id}:`, error);
+      return rejectWithValue(error);
+    }
+  }
+);
+
+export const updateShortcut = createAsyncThunk(
+  "shortcuts/update",
+  async (
+    { id, payload }: { id: string; payload: CreateShortcutPayload },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await invoke<Shortcut>("update_shortcut", {
+        id,
+        payload,
+      });
+      return response;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  }
+);
+
 const initialState: ShortcutsState = {
   items: [],
-  loading: false,
+  listLoading: false,
+  detailLoading: false,
+  saveLoading: false,
+  deleteLoading: false,
   error: null,
 };
 
@@ -72,40 +109,40 @@ const shortcutsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(fetchShortcuts.pending, (state: ShortcutsState) => {
-      state.loading = true;
+      state.listLoading = true;
       state.error = null;
     });
     builder.addCase(
       fetchShortcuts.fulfilled,
       (state: ShortcutsState, action) => {
         state.items = action.payload;
-        state.loading = false;
+        state.listLoading = false;
         state.error = null;
       }
     );
     builder.addCase(
       fetchShortcuts.rejected,
       (state: ShortcutsState, action) => {
-        state.loading = false;
+        state.listLoading = false;
         state.error = action.error.message || "Failed to fetch shortcuts";
       }
     );
 
     builder.addCase(createShortcut.pending, (state: ShortcutsState) => {
-      state.loading = true;
+      state.saveLoading = true;
       state.error = null;
     });
     builder.addCase(
       createShortcut.fulfilled,
       (state: ShortcutsState, action) => {
         state.items.push(action.payload);
-        state.loading = false;
+        state.saveLoading = false;
       }
     );
     builder.addCase(
       createShortcut.rejected,
       (state: ShortcutsState, action) => {
-        state.loading = false;
+        state.saveLoading = false;
         state.error = action.payload as string;
       }
     );
@@ -114,19 +151,57 @@ const shortcutsSlice = createSlice({
       deleteShortcut.fulfilled,
       (state: ShortcutsState, action) => {
         state.items = state.items.filter((item) => item.id !== action.payload);
-        state.loading = false;
+        state.deleteLoading = false;
         state.error = null;
       }
     );
     builder.addCase(deleteShortcut.pending, (state: ShortcutsState) => {
-      state.loading = true;
+      state.deleteLoading = true;
       state.error = null;
     });
     builder.addCase(
       deleteShortcut.rejected,
       (state: ShortcutsState, action) => {
-        state.loading = false;
+        state.deleteLoading = false;
         state.error = action.error.message || "Failed to delete shortcut";
+      }
+    );
+
+    builder.addCase(fetchShortcutById.pending, (state: ShortcutsState) => {
+      state.detailLoading = true;
+      state.error = null;
+    });
+    builder.addCase(
+      fetchShortcutById.fulfilled,
+      (state: ShortcutsState, action) => {
+        state.currentShortcut = action.payload;
+        state.detailLoading = false;
+        state.error = null;
+      }
+    );
+    builder.addCase(
+      fetchShortcutById.rejected,
+      (state: ShortcutsState, action) => {
+        state.detailLoading = false;
+        state.error = action.error.message || "Failed to fetch shortcut";
+      }
+    );
+
+    builder.addCase(updateShortcut.pending, (state: ShortcutsState) => {
+      state.saveLoading = true;
+      state.error = null;
+    });
+    builder.addCase(
+      updateShortcut.fulfilled,
+      (state: ShortcutsState, action) => {
+        const index = state.items.findIndex(
+          (item) => item.id === action.payload.id
+        );
+        if (index !== -1) {
+          state.items[index] = action.payload;
+        }
+        state.currentShortcut = action.payload;
+        state.saveLoading = false;
       }
     );
   },

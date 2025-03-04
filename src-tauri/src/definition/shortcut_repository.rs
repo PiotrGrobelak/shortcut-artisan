@@ -88,5 +88,40 @@ impl ShortcutRepository {
             }
         }
     }
+
+    pub fn get_by_id(&self, id: &str) -> Result<Shortcut, String> {
+        log::debug!("Fetching shortcut with id: {}", id);
+        let config = AppConfig::global()
+            .lock()
+            .expect("Failed to lock config during retrieval.");
+        
+        let file_path = &config.settings_file;
+        log::trace!("Reading shortcuts from file: {}", file_path.display());
+        
+        let content = match std::fs::read_to_string(file_path) {
+            Ok(content) => content,
+            Err(e) => {
+                log::error!("Failed to read shortcuts file: {}", e);
+                return Err(e.to_string());
+            }
+        };
+
+        match serde_json::from_str::<Vec<Shortcut>>(&content) {
+            Ok(shortcuts) => {
+                if let Some(shortcut) = shortcuts.iter().find(|s| s.id == id) {
+                    log::debug!("Successfully found shortcut with id: {}", id);
+                    Ok(shortcut.clone())
+                } else {
+                    let error_msg = format!("Shortcut with id {} not found", id);
+                    log::error!("{}", error_msg);
+                    Err(error_msg)
+                }
+            }
+            Err(e) => {
+                log::error!("Failed to parse shortcuts JSON: {}", e);
+                Err(e.to_string())
+            }
+        }
+    }
 }
 

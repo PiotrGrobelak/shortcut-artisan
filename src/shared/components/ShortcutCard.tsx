@@ -8,6 +8,7 @@ interface ShortcutCardProps {
   keyCombination: string;
   onEdit?: () => void;
   onDelete?: (id: string) => void;
+  isSelected?: boolean;
 }
 
 export function ShortcutCard({
@@ -17,9 +18,12 @@ export function ShortcutCard({
   keyCombination,
   onEdit,
   onDelete,
+  isSelected = false,
 }: ShortcutCardProps) {
   return (
-    <Card className="bg-white dark:bg-gray-800 p-4">
+    <Card
+      className={`bg-white dark:bg-gray-800 p-4 ${isSelected ? "border-2 border-blue-500" : ""}`}
+    >
       <div className="flex justify-between items-start mb-3">
         <h3 className="font-medium">{commandName}</h3>
         <div className="flex items-center space-x-2">

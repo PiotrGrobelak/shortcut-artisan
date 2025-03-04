@@ -89,6 +89,32 @@ impl DefinitionFacade {
     pub fn get_all_shortcuts(&self) -> Result<Vec<Shortcut>, String> {
         self.shortcut_repository.get_all()
     }
+
+    pub fn get_shortcut_by_id(&self, id: &str) -> Result<Shortcut, String> {
+        self.shortcut_repository.get_by_id(id)
+    }
+
+    pub async fn update_shortcut(
+        &self,
+        id: &str,
+        payload: ShortcutRequestPayload,
+    ) -> Result<Shortcut, String> {
+        let existing = self.get_shortcut_by_id(id)?;
+        
+        let updated_shortcut = Shortcut {
+            id: existing.id.clone(),
+            key_combination: payload.shortcut,
+            command_name: payload.name,
+            description: payload.description,
+            enabled: true,
+            actions: payload.actions,
+            scope: None,
+        };
+        
+        self.shortcut_repository.save(&updated_shortcut)?;
+        
+        Ok(updated_shortcut)
+    }
 }
 
 

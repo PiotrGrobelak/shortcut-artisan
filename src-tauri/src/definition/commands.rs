@@ -22,3 +22,22 @@ pub async fn delete_shortcut(app_handle: AppHandle, id: String) -> Result<(), St
     let facade = DefinitionFacade::new(app_handle)?;
     facade.delete_shortcut(&id).await
 }
+
+#[tauri::command]
+pub async fn get_shortcut_by_id(
+    app_handle: AppHandle,
+    id: String,
+) -> Result<Shortcut, String> {
+    let facade = DefinitionFacade::new(app_handle)?;
+    facade.get_shortcut_by_id(&id)
+}
+
+#[tauri::command]
+pub async fn update_shortcut(
+    app_handle: AppHandle,
+    id: String,
+    payload: ShortcutRequestPayload,
+) -> Result<Shortcut, String> {
+    let facade = DefinitionFacade::new(app_handle)?;
+    facade.update_shortcut(&id, payload).await
+}

@@ -22,7 +22,11 @@ import {
 } from "./model/ShortcutAction.model";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/shared/store";
-import { createShortcut } from "@/shared/store/slices/shortcutsSlice";
+import {
+  createShortcut,
+  fetchShortcutById,
+  updateShortcut,
+} from "@/shared/store/slices/shortcutsSlice";
 
 interface ManageShortcutsProps {
   selectedShortcutId?: string | null;
@@ -32,7 +36,9 @@ export default function ManageShortcuts({
   selectedShortcutId,
 }: ManageShortcutsProps = {}) {
   const dispatch = useDispatch<AppDispatch>();
-  const { loading, error } = useSelector((state: RootState) => state.shortcuts);
+  const { detailLoading, saveLoading, error, currentShortcut } = useSelector(
+    (state: RootState) => state.shortcuts
+  );
 
   const [shortcut, setShortcut] = useState<string[]>([]);
   const [savedShortcut, setSavedShortcut] = useState("");
@@ -102,8 +108,14 @@ export default function ManageShortcuts({
     };
 
     try {
-      await dispatch(createShortcut(payload)).unwrap();
-      clearShortcut();
+      if (selectedShortcutId) {
+        await dispatch(
+          updateShortcut({ id: selectedShortcutId, payload })
+        ).unwrap();
+      } else {
+        await dispatch(createShortcut(payload)).unwrap();
+        clearShortcut();
+      }
     } catch (error) {
       console.error("Error configuring shortcut:", error);
     }
@@ -142,8 +154,27 @@ export default function ManageShortcuts({
   };
 
   useEffect(() => {
-    setSavedShortcut(shortcut.join("+"));
-  }, [shortcut]);
+    if (selectedShortcutId) {
+      dispatch(fetchShortcutById(selectedShortcutId));
+    } else {
+      clearShortcut();
+    }
+  }, [selectedShortcutId, dispatch]);
+
+  useEffect(() => {
+    if (currentShortcut) {
+      setName(currentShortcut.command_name);
+      setDescription(currentShortcut.description || "");
+      setSavedShortcut(currentShortcut.key_combination);
+      setShortcut(currentShortcut.key_combination.split("+"));
+
+      if (currentShortcut.actions.length > 0) {
+        const action = currentShortcut.actions[0];
+        setActionType(action.action_type);
+        setActionParams(action.parameters);
+      }
+    }
+  }, [currentShortcut]);
 
   return (
     <div className="space-y-6">
@@ -252,15 +283,20 @@ export default function ManageShortcuts({
           </CardContent>
         </Card>
 
-        {loading && <div>Saving shortcut...</div>}
+        {detailLoading && <div>Loading shortcut data...</div>}
+        {saveLoading && <div>Saving changes...</div>}
         {error && <div className="text-red-500">Error: {error}</div>}
 
         <div className="flex justify-end space-x-4 pt-4">
-          <Button variant="outline" onClick={clearShortcut} disabled={loading}>
+          <Button
+            variant="outline"
+            onClick={clearShortcut}
+            disabled={saveLoading}
+          >
             Clear All
           </Button>
-          <Button onClick={sendShortcut} disabled={loading}>
-            {loading ? "Saving..." : "Save Shortcut"}
+          <Button onClick={sendShortcut} disabled={saveLoading}>
+            {saveLoading ? "Saving..." : "Save Shortcut"}
           </Button>
         </div>
       </div>

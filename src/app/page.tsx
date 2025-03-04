@@ -11,7 +11,7 @@ import { ShortcutCard } from "@/shared/components/ShortcutCard";
 import ManageShortcuts from "@/features/ManageShortcuts/ManageShortcuts";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { PlusCircle, Folder } from "lucide-react";
+import { PlusCircle, Folder, X } from "lucide-react";
 import { CreateNewShortcutModal } from "@/shared/components/CreateNewShortcutModal";
 
 interface ShortcutFolder {
@@ -24,7 +24,7 @@ export default function Main() {
   const dispatch = useDispatch<AppDispatch>();
   const {
     items: shortcuts,
-    loading,
+    listLoading,
     error,
   } = useSelector((state: RootState) => state.shortcuts);
 
@@ -65,6 +65,10 @@ export default function Main() {
 
   const handleEdit = (id: string) => {
     setSelectedShortcut(id);
+  };
+
+  const handleClearSelection = () => {
+    setSelectedShortcut(null);
   };
 
   if (error) {
@@ -112,7 +116,10 @@ export default function Main() {
                 : "Shortcuts"}
             </h2>
             <CreateNewShortcutModal
-              onSuccess={() => dispatch(fetchShortcuts())}
+              onSuccess={() => {
+                dispatch(fetchShortcuts());
+                setSelectedShortcut(null);
+              }}
               trigger={
                 <Button size="sm" variant="ghost">
                   <PlusCircle className="h-4 w-4 mr-2" />
@@ -122,7 +129,7 @@ export default function Main() {
             />
           </div>
 
-          {loading ? (
+          {listLoading ? (
             <div>Loading shortcuts...</div>
           ) : (
             <div className="space-y-3">
@@ -134,7 +141,13 @@ export default function Main() {
                   description={shortcut.description}
                   keyCombination={shortcut.key_combination}
                   onEdit={() => handleEdit(shortcut.id)}
-                  onDelete={handleDelete}
+                  onDelete={(id) => {
+                    handleDelete(id);
+                    if (selectedShortcut === id) {
+                      setSelectedShortcut(null);
+                    }
+                  }}
+                  isSelected={selectedShortcut === shortcut.id}
                 />
               ))}
 
@@ -148,11 +161,32 @@ export default function Main() {
         </div>
 
         <div className="col-span-6 p-4 overflow-y-auto">
-          <h2 className="text-xl font-bold mb-4">
-            {selectedShortcut ? "Edit Shortcut" : "Create New Shortcut"}
-          </h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold">
+              {selectedShortcut
+                ? "Edit Shortcut"
+                : "Select a shortcut or create a new one"}
+            </h2>
+            {selectedShortcut && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleClearSelection}
+              >
+                <X className="h-4 w-4 mr-2" />
+                Clear Selection
+              </Button>
+            )}
+          </div>
 
-          <ManageShortcuts />
+          {selectedShortcut ? (
+            <ManageShortcuts selectedShortcutId={selectedShortcut} />
+          ) : (
+            <div className="text-center text-gray-500 p-12 border border-dashed rounded-lg">
+              No shortcut selected. Select a shortcut from the list or create a
+              new one.
+            </div>
+          )}
         </div>
       </div>
     </div>
