@@ -14,7 +14,14 @@ pub async fn save_shortcut(
 #[tauri::command]
 pub async fn get_shortcuts(app_handle: AppHandle) -> Result<Vec<Shortcut>, String> {
     let facade = DefinitionFacade::new(app_handle)?;
-    facade.get_all_shortcuts()
+    let shortcuts = facade.get_all_shortcuts()?;
+    
+    let filtered_shortcuts: Vec<Shortcut> = shortcuts
+        .into_iter()
+        .filter(|s| !s.id.is_empty())
+        .collect();
+        
+    Ok(filtered_shortcuts)
 }
 
 #[tauri::command]

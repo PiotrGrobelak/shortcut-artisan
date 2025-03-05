@@ -9,22 +9,50 @@ impl ShortcutRepository {
     }
 
     pub fn save(&self, shortcut: &Shortcut) -> Result<(), String> {
+        log::debug!("Saving shortcut: {:?}", shortcut);
+        
         let config = AppConfig::global()
             .lock()
             .expect("Failed to lock config during save.");
+        
         let file_path = &config.settings_file;
-
-        let content = std::fs::read_to_string(file_path).map_err(|e| e.to_string())?;
-
-        let mut shortcuts: Vec<Shortcut> = serde_json::from_str(&content).unwrap_or_default();
-
+        
+        // Read existing shortcuts
+        let content = match std::fs::read_to_string(file_path) {
+            Ok(content) => content,
+            Err(e) => {
+                log::error!("Failed to read shortcuts file: {}", e);
+                "[]".to_string() // Default to empty array if file doesn't exist
+            }
+        };
+        
+        let mut shortcuts: Vec<Shortcut> = match serde_json::from_str(&content) {
+            Ok(shortcuts) => shortcuts,
+            Err(e) => {
+                log::error!("Failed to parse shortcuts JSON: {}", e);
+                Vec::new()
+            }
+        };
+        
+        // THIS IS THE CRITICAL PART - NEED TO REMOVE EXISTING SHORTCUT WITH SAME ID
+        shortcuts.retain(|s| s.id != shortcut.id);
+        
+        // Add the updated shortcut
         shortcuts.push(shortcut.clone());
-
-        let json = serde_json::to_string(&shortcuts).map_err(|e| e.to_string())?;
-
-        std::fs::write(file_path, json).map_err(|e| e.to_string())?;
-
-        Ok(())
+        
+        // Save back to file
+        let json = match serde_json::to_string_pretty(&shortcuts) {
+            Ok(json) => json,
+            Err(e) => return Err(e.to_string()),
+        };
+        
+        match std::fs::write(file_path, json) {
+            Ok(_) => {
+                log::debug!("Shortcut saved successfully");
+                Ok(())
+            },
+            Err(e) => Err(e.to_string()),
+        }
     }
 
     pub fn get_current(&self) -> Result<Shortcut, String> {

@@ -135,7 +135,9 @@ const shortcutsSlice = createSlice({
     builder.addCase(
       createShortcut.fulfilled,
       (state: ShortcutsState, action) => {
-        state.items.push(action.payload);
+        if (action.payload) {
+          state.items.push(action.payload);
+        }
         state.saveLoading = false;
       }
     );
