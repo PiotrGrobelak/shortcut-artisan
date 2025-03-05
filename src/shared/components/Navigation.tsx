@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Settings, BarChart } from "lucide-react";
+import { Home, Settings, BarChart, Code } from "lucide-react";
 
 export default function Navigation() {
   const pathname = usePathname();
@@ -13,6 +13,7 @@ export default function Navigation() {
     { path: "/", label: "Home", icon: Home },
     { path: "/analytics", label: "Analytics", icon: BarChart },
     { path: "/settings", label: "Settings", icon: Settings },
+    { path: "/developer", label: "Developer", icon: Code },
   ];
 
   return (
