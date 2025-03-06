@@ -1,22 +1,9 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { invoke } from "@tauri-apps/api/core";
-import { ShortcutAction } from "@/features/ManageShortcuts/model/ShortcutAction.model";
-
-interface Shortcut {
-  id: string;
-  key_combination: string;
-  command_name: string;
-  description?: string;
-  enabled: boolean;
-  actions: ShortcutAction[];
-}
-
-interface CreateShortcutPayload {
-  shortcut: string;
-  name: string;
-  description?: string;
-  actions: ShortcutAction[];
-}
+import {
+  ShortcutsService,
+  Shortcut,
+  CreateShortcutPayload,
+} from "@/services/shortcuts.service";
 
 interface ShortcutsState {
   items: Shortcut[];
@@ -32,7 +19,7 @@ export const fetchShortcuts = createAsyncThunk(
   "shortcuts/fetch-all",
   async (_, { rejectWithValue }) => {
     try {
-      return await invoke<Shortcut[]>("get_shortcuts");
+      return await ShortcutsService.getAll();
     } catch (error) {
       console.error("Failed to fetch shortcuts:", error);
       return rejectWithValue(error);
@@ -44,8 +31,7 @@ export const createShortcut = createAsyncThunk(
   "shortcuts/create",
   async (payload: CreateShortcutPayload, { rejectWithValue }) => {
     try {
-      const response = await invoke<Shortcut>("save_shortcut", { payload });
-      return response;
+      return await ShortcutsService.create(payload);
     } catch (error) {
       return rejectWithValue(error);
     }
@@ -54,9 +40,13 @@ export const createShortcut = createAsyncThunk(
 
 export const deleteShortcut = createAsyncThunk(
   "shortcuts/delete",
-  async (id: string) => {
-    await invoke("delete_shortcut", { id });
-    return id;
+  async (id: string, { rejectWithValue }) => {
+    try {
+      await ShortcutsService.delete(id);
+      return id;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
   }
 );
 
@@ -64,7 +54,7 @@ export const fetchShortcutById = createAsyncThunk(
   "shortcuts/fetch-by-id",
   async (id: string, { rejectWithValue }) => {
     try {
-      return await invoke<Shortcut>("get_shortcut_by_id", { id });
+      return await ShortcutsService.getById(id);
     } catch (error) {
       console.error(`Failed to fetch shortcut with id ${id}:`, error);
       return rejectWithValue(error);
@@ -79,11 +69,7 @@ export const updateShortcut = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const response = await invoke<Shortcut>("update_shortcut", {
-        id,
-        payload,
-      });
-      return response;
+      return await ShortcutsService.update(id, payload);
     } catch (error) {
       return rejectWithValue(error);
     }
