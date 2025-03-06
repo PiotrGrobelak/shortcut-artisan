@@ -1,9 +1,9 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { ShortcutsService } from "@/services/shortcuts/shortcuts.service";
 import {
-  ShortcutsService,
   Shortcut,
   CreateShortcutPayload,
-} from "@/services/shortcuts.service";
+} from "@/services/shortcuts/shortcuts.model";
 
 interface ShortcutsState {
   items: Shortcut[];

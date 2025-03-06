@@ -180,7 +180,10 @@ export default function Main() {
           </div>
 
           {selectedShortcut ? (
-            <ManageShortcuts selectedShortcutId={selectedShortcut} />
+            <ManageShortcuts
+              selectedShortcutId={selectedShortcut}
+              onShortcutCreated={(id) => setSelectedShortcut(id)}
+            />
           ) : (
             <div className="text-center text-gray-500 p-12 border border-dashed rounded-lg">
               No shortcut selected. Select a shortcut from the list or create a

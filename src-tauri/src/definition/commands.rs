@@ -6,7 +6,7 @@ use tauri::AppHandle;
 pub async fn save_shortcut(
     app_handle: AppHandle,
     payload: ShortcutRequestPayload,
-) -> Result<(), String> {
+) -> Result<Shortcut, String> {
     let facade = DefinitionFacade::new(app_handle)?;
     facade.save_shortcut(payload).await
 }

@@ -26,14 +26,17 @@ import {
   createShortcut,
   fetchShortcutById,
   updateShortcut,
+  fetchShortcuts,
 } from "@/shared/store/slices/shortcutsSlice";
 
 interface ManageShortcutsProps {
   selectedShortcutId?: string | null;
+  onShortcutCreated?: (shortcutId: string) => void;
 }
 
 export default function ManageShortcuts({
   selectedShortcutId,
+  onShortcutCreated,
 }: ManageShortcutsProps = {}) {
   const dispatch = useDispatch<AppDispatch>();
   const { detailLoading, saveLoading, error, currentShortcut } = useSelector(
@@ -112,9 +115,18 @@ export default function ManageShortcuts({
         await dispatch(
           updateShortcut({ id: selectedShortcutId, payload })
         ).unwrap();
+
+        dispatch(fetchShortcuts());
       } else {
-        await dispatch(createShortcut(payload)).unwrap();
+        const newShortcut = await dispatch(createShortcut(payload)).unwrap();
+
+        if (onShortcutCreated) {
+          onShortcutCreated(newShortcut.id);
+        }
+
         clearShortcut();
+
+        dispatch(fetchShortcuts());
       }
     } catch (error) {
       console.error("Error configuring shortcut:", error);

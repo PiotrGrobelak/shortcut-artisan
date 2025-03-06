@@ -31,7 +31,7 @@ import {
 
 interface CreateNewShortcutModalProps {
   trigger?: React.ReactNode;
-  onSuccess?: () => void;
+  onSuccess?: (shortcut: string) => void;
 }
 
 export function CreateNewShortcutModal({
@@ -154,12 +154,14 @@ export function CreateNewShortcutModal({
     };
 
     try {
-      await dispatch(createShortcut(payload)).unwrap();
+      const newShortcut = await dispatch(createShortcut(payload)).unwrap();
       setIsOpen(false);
-      clearForm();
-      onSuccess?.();
+
+      if (onSuccess) {
+        onSuccess(newShortcut);
+      }
     } catch (error) {
-      console.error("Error configuring shortcut:", error);
+      console.error("Failed to create shortcut:", error);
     }
   };
 

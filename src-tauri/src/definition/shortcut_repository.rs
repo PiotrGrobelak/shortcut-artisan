@@ -17,12 +17,12 @@ impl ShortcutRepository {
         
         let file_path = &config.settings_file;
         
-        // Read existing shortcuts
+      
         let content = match std::fs::read_to_string(file_path) {
             Ok(content) => content,
             Err(e) => {
                 log::error!("Failed to read shortcuts file: {}", e);
-                "[]".to_string() // Default to empty array if file doesn't exist
+                "[]".to_string()
             }
         };
         
@@ -34,13 +34,12 @@ impl ShortcutRepository {
             }
         };
         
-        // THIS IS THE CRITICAL PART - NEED TO REMOVE EXISTING SHORTCUT WITH SAME ID
+       
         shortcuts.retain(|s| s.id != shortcut.id);
         
-        // Add the updated shortcut
+      
         shortcuts.push(shortcut.clone());
         
-        // Save back to file
         let json = match serde_json::to_string_pretty(&shortcuts) {
             Ok(json) => json,
             Err(e) => return Err(e.to_string()),

@@ -20,7 +20,7 @@ impl DefinitionFacade {
         })
     }
 
-    pub async fn save_shortcut(&self, shortcut: ShortcutRequestPayload) -> Result<(), String> {
+    pub async fn save_shortcut(&self, shortcut: ShortcutRequestPayload) -> Result<Shortcut, String> {
         log::info!("Saving shortcut through facade: {}", shortcut.name);
 
         let shortcut = Shortcut {
@@ -52,7 +52,7 @@ impl DefinitionFacade {
 
         let _ = execution_facade.register_system_shortcut(tauri_shortcut);
 
-        Ok(())
+        Ok(shortcut)
     }
 
     pub fn get_current_shortcut(&self) -> Result<Shortcut, String> {
