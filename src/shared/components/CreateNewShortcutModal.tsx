@@ -31,7 +31,7 @@ import {
 
 interface CreateNewShortcutModalProps {
   trigger?: React.ReactNode;
-  onSuccess?: (shortcut: string) => void;
+  onSuccess?: (shortcutId: string) => void;
 }
 
 export function CreateNewShortcutModal({

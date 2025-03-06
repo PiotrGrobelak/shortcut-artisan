@@ -30,12 +30,10 @@ import {
 
 interface ManageShortcutsProps {
   selectedShortcutId?: string | null;
-  onShortcutCreated?: (shortcutId: string) => void;
 }
 
 export default function ManageShortcuts({
   selectedShortcutId,
-  onShortcutCreated,
 }: ManageShortcutsProps = {}) {
   const dispatch = useDispatch<AppDispatch>();
   const { detailLoading, saveLoading, error, currentShortcut } = useSelector(
@@ -115,11 +113,7 @@ export default function ManageShortcuts({
           updateShortcut({ id: selectedShortcutId, payload })
         ).unwrap();
       } else {
-        const newShortcut = await dispatch(createShortcut(payload)).unwrap();
-
-        if (onShortcutCreated) {
-          onShortcutCreated(newShortcut.id);
-        }
+        await dispatch(createShortcut(payload)).unwrap();
 
         clearShortcut();
       }

@@ -116,8 +116,8 @@ export default function Main() {
                 : "Shortcuts"}
             </h2>
             <CreateNewShortcutModal
-              onSuccess={() => {
-                setSelectedShortcut(null);
+              onSuccess={(id) => {
+                setSelectedShortcut(id);
               }}
               trigger={
                 <Button size="sm" variant="ghost">
@@ -179,10 +179,7 @@ export default function Main() {
           </div>
 
           {selectedShortcut ? (
-            <ManageShortcuts
-              selectedShortcutId={selectedShortcut}
-              onShortcutCreated={(id) => setSelectedShortcut(id)}
-            />
+            <ManageShortcuts selectedShortcutId={selectedShortcut} />
           ) : (
             <div className="text-center text-gray-500 p-12 border border-dashed rounded-lg">
               No shortcut selected. Select a shortcut from the list or create a
