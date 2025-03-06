@@ -158,7 +158,7 @@ export function CreateNewShortcutModal({
       setIsOpen(false);
 
       if (onSuccess) {
-        onSuccess(newShortcut);
+        onSuccess(newShortcut.id);
       }
     } catch (error) {
       console.error("Failed to create shortcut:", error);

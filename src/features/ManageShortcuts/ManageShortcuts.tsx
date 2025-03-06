@@ -26,7 +26,6 @@ import {
   createShortcut,
   fetchShortcutById,
   updateShortcut,
-  fetchShortcuts,
 } from "@/shared/store/slices/shortcutsSlice";
 
 interface ManageShortcutsProps {
@@ -115,8 +114,6 @@ export default function ManageShortcuts({
         await dispatch(
           updateShortcut({ id: selectedShortcutId, payload })
         ).unwrap();
-
-        dispatch(fetchShortcuts());
       } else {
         const newShortcut = await dispatch(createShortcut(payload)).unwrap();
 
@@ -125,8 +122,6 @@ export default function ManageShortcuts({
         }
 
         clearShortcut();
-
-        dispatch(fetchShortcuts());
       }
     } catch (error) {
       console.error("Error configuring shortcut:", error);

@@ -117,7 +117,6 @@ export default function Main() {
             </h2>
             <CreateNewShortcutModal
               onSuccess={() => {
-                dispatch(fetchShortcuts());
                 setSelectedShortcut(null);
               }}
               trigger={
