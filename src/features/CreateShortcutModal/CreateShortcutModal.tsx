@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "@/shared/store";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/shared/store";
 import { createShortcut } from "@/shared/store/slices/shortcutsSlice";
 import {
   Dialog,
@@ -28,11 +28,11 @@ export default function CreateNewShortcutModal({
 }: CreateNewShortcutModalProps) {
   const dispatch = useDispatch<AppDispatch>();
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const createLoading = useSelector(
+    (state: RootState) => state.shortcuts.createLoading
+  );
 
   const handleSubmit = async (values: ShortcutFormValues) => {
-    setIsLoading(true);
-
     const payload = {
       shortcut: values.shortcut,
       name: values.name,
@@ -54,8 +54,6 @@ export default function CreateNewShortcutModal({
       }
     } catch (error) {
       console.error("Failed to create shortcut:", error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -63,8 +61,11 @@ export default function CreateNewShortcutModal({
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         {trigger || (
-          <Button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-            Add Shortcut
+          <Button
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            disabled={createLoading}
+          >
+            {createLoading ? "Creating..." : "Create"}
           </Button>
         )}
       </DialogTrigger>
@@ -76,7 +77,7 @@ export default function CreateNewShortcutModal({
         <ShortcutForm
           onSubmit={handleSubmit}
           onCancel={() => setIsOpen(false)}
-          isLoading={isLoading}
+          isLoading={createLoading}
           submitLabel="Create Shortcut"
         />
       </DialogContent>

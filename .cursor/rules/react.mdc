@@ -1,6 +1,6 @@
 ---
 description: React rules for all react files
-globs: 
+globs: *.tsx,*.ts
 ---
 Commands:
 -use npx shadcn@latest command to install new components

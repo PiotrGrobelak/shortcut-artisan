@@ -38,6 +38,7 @@ export default function Main() {
   const [selectedShortcut, setSelectedShortcut] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log("fetching shortcuts");
     dispatch(fetchShortcuts());
   }, [dispatch]);
 

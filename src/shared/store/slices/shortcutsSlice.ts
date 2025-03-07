@@ -9,7 +9,7 @@ interface ShortcutsState {
   items: Shortcut[];
   listLoading: boolean;
   detailLoading: boolean;
-  saveLoading: boolean;
+  createLoading: boolean;
   deleteLoading: boolean;
   error: string | null;
   currentShortcut?: Shortcut;
@@ -80,7 +80,7 @@ const initialState: ShortcutsState = {
   items: [],
   listLoading: false,
   detailLoading: false,
-  saveLoading: false,
+  createLoading: false,
   deleteLoading: false,
   error: null,
 };
@@ -115,7 +115,7 @@ const shortcutsSlice = createSlice({
     );
 
     builder.addCase(createShortcut.pending, (state: ShortcutsState) => {
-      state.saveLoading = true;
+      state.createLoading = true;
       state.error = null;
     });
     builder.addCase(
@@ -124,13 +124,13 @@ const shortcutsSlice = createSlice({
         if (action.payload) {
           state.items.push(action.payload);
         }
-        state.saveLoading = false;
+        state.createLoading = false;
       }
     );
     builder.addCase(
       createShortcut.rejected,
       (state: ShortcutsState, action) => {
-        state.saveLoading = false;
+        state.createLoading = false;
         state.error = action.payload as string;
       }
     );
@@ -176,7 +176,7 @@ const shortcutsSlice = createSlice({
     );
 
     builder.addCase(updateShortcut.pending, (state: ShortcutsState) => {
-      state.saveLoading = true;
+      state.createLoading = true;
       state.error = null;
     });
     builder.addCase(
@@ -189,7 +189,7 @@ const shortcutsSlice = createSlice({
           state.items[index] = action.payload;
         }
         state.currentShortcut = action.payload;
-        state.saveLoading = false;
+        state.createLoading = false;
       }
     );
   },
