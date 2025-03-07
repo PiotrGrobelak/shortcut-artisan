@@ -8,11 +8,11 @@ import {
   deleteShortcut,
 } from "@/shared/store/slices/shortcutsSlice";
 import { ShortcutCard } from "@/shared/components/ShortcutCard";
-import ManageShortcuts from "@/features/ManageShortcuts/ManageShortcuts";
+import ManageShortcuts from "@/features/ManageShortcut/ManageShortcut";
+import CreateNewShortcutModal from "@/features/CreateShortcutModal/CreateShortcutModal";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PlusCircle, Folder, X } from "lucide-react";
-import { CreateNewShortcutModal } from "@/shared/components/CreateNewShortcutModal";
 
 interface ShortcutFolder {
   id: string;
