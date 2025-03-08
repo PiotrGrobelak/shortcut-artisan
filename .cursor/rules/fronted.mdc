@@ -1,0 +1,4 @@
+---
+description: Fronted rules across all UI files
+globs: *.js,*.ts,*.tsx
+---

@@ -45,7 +45,7 @@ export interface Shortcut {
   actions: ShortcutAction[];
 }
 
-export interface CreateShortcutPayload {
+export interface ShortcutPayload {
   shortcut: string;
   name: string;
   description?: string;

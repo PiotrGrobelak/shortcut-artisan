@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { ShortcutsService } from "@/services/shortcuts/shortcuts.service";
 import {
   Shortcut,
-  CreateShortcutPayload,
+  ShortcutPayload,
 } from "@/services/shortcuts/shortcuts.model";
 
 interface ShortcutsState {
@@ -29,7 +29,7 @@ export const fetchShortcuts = createAsyncThunk(
 
 export const createShortcut = createAsyncThunk(
   "shortcuts/create",
-  async (payload: CreateShortcutPayload, { rejectWithValue }) => {
+  async (payload: ShortcutPayload, { rejectWithValue }) => {
     try {
       return await ShortcutsService.create(payload);
     } catch (error) {
@@ -65,7 +65,7 @@ export const fetchShortcutById = createAsyncThunk(
 export const updateShortcut = createAsyncThunk(
   "shortcuts/update",
   async (
-    { id, payload }: { id: string; payload: CreateShortcutPayload },
+    { id, payload }: { id: string; payload: ShortcutPayload },
     { rejectWithValue }
   ) => {
     try {

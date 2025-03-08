@@ -1,12 +1,10 @@
 use tauri::AppHandle;
 
-pub struct AnalyticsFacade {
-    app_handle: AppHandle,
-}
+pub struct AnalyticsFacade {}
 
 impl AnalyticsFacade {
-    pub fn new(app_handle: AppHandle) -> Self {
-        Self { app_handle }
+    pub fn new(_app_handle: AppHandle) -> Self {
+        Self {}
     }
 
     pub fn track_shortcut_creation(&self, shortcut_name: &str) {

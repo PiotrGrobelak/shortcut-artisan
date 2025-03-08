@@ -1,5 +1,5 @@
 import { apiClient } from "../api";
-import { Shortcut, CreateShortcutPayload } from "./shortcuts.model";
+import { Shortcut, ShortcutPayload } from "./shortcuts.model";
 
 export const ShortcutsService = {
   getAll: async (): Promise<Shortcut[]> => {
@@ -10,14 +10,11 @@ export const ShortcutsService = {
     return await apiClient.invoke<Shortcut>("get_shortcut_by_id", { id });
   },
 
-  create: async (payload: CreateShortcutPayload): Promise<Shortcut> => {
+  create: async (payload: ShortcutPayload): Promise<Shortcut> => {
     return await apiClient.invoke<Shortcut>("save_shortcut", { payload });
   },
 
-  update: async (
-    id: string,
-    payload: CreateShortcutPayload
-  ): Promise<Shortcut> => {
+  update: async (id: string, payload: ShortcutPayload): Promise<Shortcut> => {
     return await apiClient.invoke<Shortcut>("update_shortcut", { id, payload });
   },
 
