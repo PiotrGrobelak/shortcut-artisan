@@ -43,6 +43,7 @@ export interface Shortcut {
   description?: string;
   enabled: boolean;
   actions: ShortcutAction[];
+  folder_id?: string;
 }
 
 export interface ShortcutPayload {
@@ -50,4 +51,5 @@ export interface ShortcutPayload {
   name: string;
   description?: string;
   actions: ShortcutAction[];
+  folder_id?: string;
 }

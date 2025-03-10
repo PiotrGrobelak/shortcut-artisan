@@ -11,6 +11,7 @@ pub struct Shortcut {
     pub enabled: bool,
     pub actions: Vec<ShortcutAction>,
     pub scope: Option<ActionScope>,
+    pub folder_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -19,4 +20,5 @@ pub struct ShortcutRequestPayload {
     pub name: String,
     pub description: Option<String>,
     pub actions: Vec<ShortcutAction>,
+    pub folder_id: Option<String>,
 }
