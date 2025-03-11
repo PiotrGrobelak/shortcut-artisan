@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FolderPayload } from "@/services/shortcuts/folder.model";
-import { CirclePicker } from "react-color";
+import { CirclePicker, ColorResult } from "react-color";
 
 interface FolderFormProps {
   initialValues?: {
@@ -33,7 +33,7 @@ export const FolderForm: React.FC<FolderFormProps> = ({
     setValues((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleColorChange = (color: any) => {
+  const handleColorChange = (color: ColorResult) => {
     setValues((prev) => ({ ...prev, color: color.hex }));
   };
 

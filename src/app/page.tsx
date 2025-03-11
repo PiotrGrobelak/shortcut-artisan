@@ -7,51 +7,44 @@ import {
   fetchShortcuts,
   deleteShortcut,
 } from "@/shared/store/slices/shortcutsSlice";
+import { fetchFolders } from "@/shared/store/slices/folderSlice";
 import { ShortcutCard } from "@/shared/components/ShortcutCard";
+import { FolderCard } from "@/shared/components/FolderCard";
 import ManageShortcuts from "@/features/ManageShortcut/ManageShortcut";
 import CreateNewShortcutModal from "@/features/CreateShortcutModal/CreateShortcutModal";
+import { CreateFolderModal } from "@/features/CreateFolderModal";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { PlusCircle, Folder, X } from "lucide-react";
-
-interface ShortcutFolder {
-  id: string;
-  name: string;
-  shortcuts: string[];
-}
+import { PlusCircle, X } from "lucide-react";
 
 export default function Main() {
   const dispatch = useDispatch<AppDispatch>();
   const {
     items: shortcuts,
-    listLoading,
-    error,
+    listLoading: shortcutsLoading,
+    error: shortcutsError,
   } = useSelector((state: RootState) => state.shortcuts);
 
-  const [folders, setFolders] = useState<ShortcutFolder[]>([
-    { id: "1", name: "Work", shortcuts: [] },
-    { id: "2", name: "Personal", shortcuts: [] },
-    { id: "3", name: "Development", shortcuts: [] },
-  ]);
+  const {
+    items: folders,
+    loading: foldersLoading,
+    error: foldersError,
+  } = useSelector((state: RootState) => state.folders);
 
-  const [selectedFolder, setSelectedFolder] = useState<string | null>("1");
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [selectedShortcut, setSelectedShortcut] = useState<string | null>(null);
+  const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false);
 
   useEffect(() => {
-    console.log("fetching shortcuts");
     dispatch(fetchShortcuts());
+    dispatch(fetchFolders());
   }, [dispatch]);
 
+  // Set first folder as selected when folders are loaded
   useEffect(() => {
-    if (shortcuts.length > 0) {
-      const updatedFolders = [...folders];
-      updatedFolders[0] = {
-        ...updatedFolders[0],
-        shortcuts: shortcuts.map((s) => s.id),
-      };
-      setFolders(updatedFolders);
+    if (folders.length > 0 && !selectedFolder) {
+      setSelectedFolder(folders[0].id);
     }
-  }, [shortcuts]);
+  }, [folders, selectedFolder]);
 
   const handleDelete = async (id: string) => {
     try {
@@ -72,6 +65,27 @@ export default function Main() {
     setSelectedShortcut(null);
   };
 
+  const handleFolderCreated = (folderId: string) => {
+    setSelectedFolder(folderId);
+  };
+
+  // Get shortcuts for selected folder
+  const getFilteredShortcuts = () => {
+    if (!selectedFolder) return shortcuts;
+
+    const currentFolder = folders.find((f) => f.id === selectedFolder);
+    if (!currentFolder) return shortcuts;
+
+    return shortcuts.filter(
+      (shortcut) =>
+        currentFolder.shortcut_ids.includes(shortcut.id) ||
+        shortcut.folder_id === selectedFolder
+    );
+  };
+
+  const filteredShortcuts = getFilteredShortcuts();
+  const error = shortcutsError || foldersError;
+
   if (error) {
     return <div className="min-h-screen p-8 text-red-500">Error: {error}</div>;
   }
@@ -82,30 +96,48 @@ export default function Main() {
         <div className="col-span-3 border-r p-4 overflow-y-auto">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold">Folders</h2>
-            <Button size="sm" variant="ghost">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setIsCreateFolderModalOpen(true)}
+            >
               <PlusCircle className="h-4 w-4 mr-2" />
               New
             </Button>
           </div>
 
-          <div className="space-y-2">
-            {folders.map((folder) => (
-              <Card
-                key={folder.id}
-                className={`p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                  selectedFolder === folder.id
-                    ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200"
-                    : ""
-                }`}
-                onClick={() => setSelectedFolder(folder.id)}
-              >
-                <div className="flex items-center">
-                  <Folder className="h-4 w-4 mr-2 text-blue-500" />
-                  <span>{folder.name}</span>
+          {foldersLoading ? (
+            <div>Loading folders...</div>
+          ) : (
+            <div className="space-y-2">
+              {folders.length === 0 ? (
+                <div className="text-center text-gray-500 py-4">
+                  No folders available. Create your first folder.
                 </div>
-              </Card>
-            ))}
-          </div>
+              ) : (
+                folders.map((folder) => (
+                  <FolderCard
+                    key={folder.id}
+                    folder={folder}
+                    isSelected={selectedFolder === folder.id}
+                    onClick={() => setSelectedFolder(folder.id)}
+                    onEdit={() => {
+                      // Handle edit folder (could open an edit modal)
+                    }}
+                    onDelete={() => {
+                      // Handle delete folder
+                    }}
+                  />
+                ))
+              )}
+            </div>
+          )}
+
+          <CreateFolderModal
+            open={isCreateFolderModalOpen}
+            onOpenChange={setIsCreateFolderModalOpen}
+            onFolderCreated={handleFolderCreated}
+          />
         </div>
 
         <div className="col-span-3 border-r p-4 overflow-y-auto">
@@ -129,11 +161,11 @@ export default function Main() {
             />
           </div>
 
-          {listLoading ? (
+          {shortcutsLoading ? (
             <div>Loading shortcuts...</div>
           ) : (
             <div className="space-y-3">
-              {shortcuts.map((shortcut) => (
+              {filteredShortcuts.map((shortcut) => (
                 <ShortcutCard
                   key={shortcut.id}
                   id={shortcut.id}
@@ -151,9 +183,9 @@ export default function Main() {
                 />
               ))}
 
-              {shortcuts.length === 0 && (
+              {filteredShortcuts.length === 0 && (
                 <div className="text-center text-gray-500 py-8">
-                  No shortcuts available
+                  No shortcuts in this folder
                 </div>
               )}
             </div>

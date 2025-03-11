@@ -42,7 +42,27 @@ impl FolderRepository {
         let content = fs::read_to_string(&self.config_path)
             .map_err(|e| format!("Failed to read settings file: {}", e))?;
         
-        serde_json::from_str(&content).map_err(|e| format!("Failed to parse settings file: {}", e))
+        let parsed: Value = serde_json::from_str(&content)
+            .map_err(|e| format!("Failed to parse settings file: {}", e))?;
+        
+        // Make sure we have a valid JSON object
+        if !parsed.is_object() {
+            // If the root is not an object, create a new valid structure
+            log::warn!("Settings file has invalid root structure, creating new settings");
+            
+            let new_settings = json!({
+                "version": "1.0.0",
+                "lastUpdated": chrono::Utc::now().to_rfc3339(),
+                "shortcuts": {
+                    "folders": []
+                }
+            });
+            
+            self.write_settings(&new_settings)?;
+            return Ok(new_settings);
+        }
+        
+        Ok(parsed)
     }
 
     fn write_settings(&self, settings: &Value) -> Result<(), String> {
@@ -54,11 +74,18 @@ impl FolderRepository {
     }
 
     pub fn get_all_folders(&self) -> Result<Vec<Folder>, String> {
-        let settings = self.read_settings()?;
+        let mut settings = self.read_settings()?;
         
-        // Ensure shortcuts.folders path exists
         if !settings.get("shortcuts").and_then(|s| s.get("folders")).is_some() {
-            error!("Invalid settings format: shortcuts.folders not found");
+            if !settings.get("shortcuts").is_some() {
+                settings["shortcuts"] = json!({});
+            }
+            
+            settings["shortcuts"]["folders"] = json!([]);
+            
+            self.write_settings(&settings)?;
+            
+            log::info!("Created missing shortcuts.folders structure in settings");
             return Ok(Vec::new());
         }
 

@@ -5,7 +5,10 @@ pub mod execution;
 
 use analytics::setup_logging_plugin;
 use config::AppConfig;
-use definition::commands::{delete_shortcut, save_shortcut, get_shortcuts, get_shortcut_by_id, update_shortcut};
+use definition::commands::{
+    delete_shortcut, save_shortcut, get_shortcuts, get_shortcut_by_id, update_shortcut,
+    create_folder, update_folder, delete_folder, get_folders, get_folder_by_id
+};
 use config::commands::get_raw_settings;
 use execution::setup_global_shortcut_plugin;
 use execution::ExecutionFacade;
@@ -27,7 +30,13 @@ pub fn run() {
             get_shortcuts, 
             get_shortcut_by_id,
             update_shortcut,
-            get_raw_settings
+            get_raw_settings,
+            create_folder,
+            update_folder,
+            delete_folder,
+            get_folders,
+            get_folder_by_id,
+            
         ])
         .setup(|app| {
             log::info!("Setup started!");
