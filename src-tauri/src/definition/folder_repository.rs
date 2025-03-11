@@ -4,8 +4,7 @@ use std::path::PathBuf;
 use log::error;
 use serde_json::{json, Value};
 
-use crate::utils::get_app_config_dir;
-
+use crate::config::AppConfig;
 use super::folder::Folder;
 
 pub struct FolderRepository {
@@ -14,11 +13,13 @@ pub struct FolderRepository {
 
 impl FolderRepository {
     pub fn new() -> Result<Self, String> {
-        let config_dir = get_app_config_dir().map_err(|e| e.to_string())?;
-        let config_path = config_dir.join("settings.json");
+        let config = AppConfig::global()
+            .lock()
+            .expect("Failed to lock config during save.");
+        
+        let config_path = &config.settings_file;    
 
         if !config_path.exists() {
-            // Create default settings with empty folders
             let default_settings = json!({
                 "version": "1.0.0",
                 "lastUpdated": chrono::Utc::now().to_rfc3339(),
@@ -34,7 +35,7 @@ impl FolderRepository {
             .map_err(|e| format!("Failed to create settings file: {}", e))?;
         }
 
-        Ok(Self { config_path })
+        Ok(Self { config_path: config_path.clone() })
     }
 
     fn read_settings(&self) -> Result<Value, String> {
@@ -87,8 +88,7 @@ impl FolderRepository {
 
     pub fn save_folder(&self, folder: &Folder) -> Result<(), String> {
         let mut settings = self.read_settings()?;
-        
-        // Ensure shortcuts.folders path exists
+
         if !settings.get("shortcuts").is_some() {
             settings["shortcuts"] = json!({});
         }
@@ -100,7 +100,6 @@ impl FolderRepository {
             .as_array_mut()
             .ok_or_else(|| "Folders is not an array".to_string())?;
         
-        // Check if folder already exists to update it
         let existing_index = folders
             .iter()
             .position(|f| f.get("id").and_then(|id| id.as_str()) == Some(&folder.id));
@@ -113,7 +112,6 @@ impl FolderRepository {
                 .map_err(|e| format!("Failed to serialize folder: {}", e))?);
         }
         
-        // Update lastUpdated timestamp
         settings["lastUpdated"] = json!(chrono::Utc::now().to_rfc3339());
         
         self.write_settings(&settings)
@@ -130,7 +128,6 @@ impl FolderRepository {
                 return Err(format!("Folder with ID {} not found", id));
             }
             
-            // Update lastUpdated timestamp
             settings["lastUpdated"] = json!(chrono::Utc::now().to_rfc3339());
             
             self.write_settings(&settings)?;

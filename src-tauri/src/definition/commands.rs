@@ -1,5 +1,6 @@
 use crate::definition::definition_facade::DefinitionFacade;
 use crate::definition::shortcut::{Shortcut, ShortcutRequestPayload};
+use crate::definition::folder::{Folder, FolderRequestPayload};
 use tauri::AppHandle;
 
 #[tauri::command]
@@ -48,3 +49,48 @@ pub async fn update_shortcut(
     let facade = DefinitionFacade::new(app_handle)?;
     facade.update_shortcut(&id, payload).await
 }
+
+#[tauri::command]
+pub async fn create_folder(
+    app_handle: AppHandle,
+    payload: FolderRequestPayload,
+) -> Result<Folder, String> {
+    let facade = DefinitionFacade::new(app_handle)?;
+    facade.create_folder(payload)
+}
+
+#[tauri::command]
+pub async fn get_folders(
+    app_handle: AppHandle,
+) -> Result<Vec<Folder>, String> {
+    let facade = DefinitionFacade::new(app_handle)?;
+    facade.get_folders()
+}
+
+#[tauri::command]
+pub async fn get_folder_by_id(
+    app_handle: AppHandle,
+    id: String,
+) -> Result<Folder, String> {
+    let facade = DefinitionFacade::new(app_handle)?;
+    facade.get_folder_by_id(&id)
+}
+
+#[tauri::command]
+pub async fn update_folder(
+    app_handle: AppHandle,
+    id: String,
+    payload: FolderRequestPayload,
+) -> Result<Folder, String> {
+    let facade = DefinitionFacade::new(app_handle)?;
+    facade.update_folder(&id, payload)
+}
+
+#[tauri::command]
+pub async fn delete_folder(
+    app_handle: AppHandle,
+    id: String,
+) -> Result<(), String> {
+    let facade = DefinitionFacade::new(app_handle)?;
+    facade.delete_folder(&id)
+} 
