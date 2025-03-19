@@ -10,14 +10,13 @@ impl ShortcutRepository {
 
     pub fn save(&self, shortcut: &Shortcut) -> Result<(), String> {
         log::debug!("Saving shortcut: {:?}", shortcut);
-        
+
         let config = AppConfig::global()
             .lock()
             .expect("Failed to lock config during save.");
-        
+
         let file_path = &config.settings_file;
-        
-      
+
         let content = match std::fs::read_to_string(file_path) {
             Ok(content) => content,
             Err(e) => {
@@ -25,7 +24,7 @@ impl ShortcutRepository {
                 "[]".to_string()
             }
         };
-        
+
         let mut shortcuts: Vec<Shortcut> = match serde_json::from_str(&content) {
             Ok(shortcuts) => shortcuts,
             Err(e) => {
@@ -33,23 +32,21 @@ impl ShortcutRepository {
                 Vec::new()
             }
         };
-        
-       
+
         shortcuts.retain(|s| s.id != shortcut.id);
-        
-      
+
         shortcuts.push(shortcut.clone());
-        
+
         let json = match serde_json::to_string_pretty(&shortcuts) {
             Ok(json) => json,
             Err(e) => return Err(e.to_string()),
         };
-        
+
         match std::fs::write(file_path, json) {
             Ok(_) => {
                 log::debug!("Shortcut saved successfully");
                 Ok(())
-            },
+            }
             Err(e) => Err(e.to_string()),
         }
     }
@@ -92,10 +89,10 @@ impl ShortcutRepository {
         let config = AppConfig::global()
             .lock()
             .expect("Failed to lock config during retrieval.");
-        
+
         let file_path = &config.settings_file;
         log::trace!("Reading shortcuts from file: {}", file_path.display());
-        
+
         let content = match std::fs::read_to_string(file_path) {
             Ok(content) => content,
             Err(e) => {
@@ -121,10 +118,10 @@ impl ShortcutRepository {
         let config = AppConfig::global()
             .lock()
             .expect("Failed to lock config during retrieval.");
-        
+
         let file_path = &config.settings_file;
         log::trace!("Reading shortcuts from file: {}", file_path.display());
-        
+
         let content = match std::fs::read_to_string(file_path) {
             Ok(content) => content,
             Err(e) => {
@@ -151,4 +148,3 @@ impl ShortcutRepository {
         }
     }
 }
-

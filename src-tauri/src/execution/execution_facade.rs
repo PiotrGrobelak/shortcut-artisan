@@ -172,7 +172,37 @@ impl<R: Runtime> ExecutionFacade<R> {
     fn load_shortcuts_from_file() -> Result<Vec<ExecutionShortcut>, String> {
         let config = AppConfig::global().lock().unwrap();
         let content = fs::read_to_string(&config.settings_file).map_err(|e| e.to_string())?;
-        serde_json::from_str(&content).map_err(|e| e.to_string())
+
+        // Parse as JSON Value
+        let json_value: Result<serde_json::Value, _> = serde_json::from_str(&content);
+
+        if let Ok(value) = json_value {
+            // Try old array format first
+            if value.is_array() {
+                return serde_json::from_value(value)
+                    .map_err(|e| format!("Failed to load legacy shortcuts: {}", e));
+            }
+
+            // New structure
+            if let Some(shortcuts_obj) = value.get("shortcuts") {
+                // Look for items array
+                if let Some(items) = shortcuts_obj.get("folders") {
+                    if let Some(items_array) = items.as_array() {
+                        if !items_array.is_empty() {
+                            return serde_json::from_value(items_array.clone().into())
+                                .map_err(|e| format!("Failed to parse shortcuts: {}", e));
+                        }
+                    }
+                }
+
+                // No items array or it's empty
+                log::info!("No shortcuts found in settings");
+                return Ok(Vec::new());
+            }
+        }
+
+        log::warn!("Invalid settings structure");
+        Ok(Vec::new())
     }
     pub fn emit_shortcut_event(
         &self,
