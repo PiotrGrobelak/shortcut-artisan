@@ -4,15 +4,14 @@ pub mod definition;
 pub mod execution;
 
 use analytics::setup_logging_plugin;
+use config::commands::get_raw_settings;
 use config::AppConfig;
 use definition::commands::{
-    delete_shortcut, save_shortcut, get_shortcuts, get_shortcut_by_id, update_shortcut,
-    create_folder, update_folder, delete_folder, get_folders, get_folder_by_id
+    create_folder, delete_folder, delete_shortcut, get_folder_by_id, get_folders,
+    get_shortcut_by_id, get_shortcuts, save_shortcut, update_folder, update_shortcut,
 };
-use config::commands::get_raw_settings;
 use execution::setup_global_shortcut_plugin;
 use execution::ExecutionFacade;
-
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -25,9 +24,9 @@ pub fn run() {
         .plugin(setup_logging_plugin())
         .plugin(setup_global_shortcut_plugin())
         .invoke_handler(tauri::generate_handler![
-            save_shortcut, 
-            delete_shortcut, 
-            get_shortcuts, 
+            save_shortcut,
+            delete_shortcut,
+            get_shortcuts,
             get_shortcut_by_id,
             update_shortcut,
             get_raw_settings,
@@ -36,7 +35,6 @@ pub fn run() {
             delete_folder,
             get_folders,
             get_folder_by_id,
-            
         ])
         .setup(|app| {
             log::info!("Setup started!");
@@ -53,4 +51,3 @@ pub fn run() {
         log::error!("Error while running tauri application: {}", e);
     }
 }
-

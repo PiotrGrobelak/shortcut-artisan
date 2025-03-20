@@ -20,21 +20,22 @@
 
 ### Shortcuts Management
 
-- **shortcuts**: Shortcuts management
-  - **folders**: Collection of shortcut folders
-    - **folder1, folder2, etc.**: Individual folders
-      - **id**: Unique folder identifier
+- **folders**: Collection of shortcut folders
+  - **folder1, folder2, etc.**: Individual folders
+    - **id**: Unique folder identifier
+    - **name**: Display name
+    - **icon**: Folder icon
+    - **color**: Folder color
+    - **items**: Array of shortcut IDs in this folder
+  - **shortcuts**: Collection of shortcuts
+    - **shortcut1, shortcut2, etc.**: Individual shortcuts
+      - **id**: Unique shortcut identifier
       - **name**: Display name
-      - **icon**: Folder icon
-      - **color**: Folder color
-      - **items**: Shortcuts in this folder
-        - **shortcut1, shortcut2, etc.**: Individual shortcuts
-          - **id**: Unique shortcut identifier
-          - **name**: Display name
-          - **url**: Target URL
-          - **icon**: Shortcut icon
-          - **tags**: Categorization tags
-          - **lastAccessed**: Last usage timestamp
+      - **url**: Target URL
+      - **icon**: Shortcut icon
+      - **folderId**: Reference to the folder this shortcut belongs to
+      - **tags**: Categorization tags
+      - **lastAccessed**: Last usage timestamp
   - **favorites**: Array of shortcut IDs marked as favorites
   - **recent**: Array of recently used shortcut IDs
 
