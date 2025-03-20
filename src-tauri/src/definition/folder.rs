@@ -7,7 +7,7 @@ pub struct Folder {
     pub name: String,
     pub icon: Option<String>,
     pub color: Option<String>,
-    pub shortcut_ids: Vec<String>, // IDs of shortcuts in this folder
+    pub shortcut_ids: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -31,10 +31,16 @@ impl Folder {
     pub fn add_shortcut(&mut self, shortcut_id: String) {
         if !self.shortcut_ids.contains(&shortcut_id) {
             self.shortcut_ids.push(shortcut_id);
+        } else {
+            log::warn!(
+                "Shortcut with id {} already exists in folder {}",
+                shortcut_id,
+                self.id
+            );
         }
     }
 
     pub fn remove_shortcut(&mut self, shortcut_id: &str) {
         self.shortcut_ids.retain(|id| id != shortcut_id);
     }
-} 
+}

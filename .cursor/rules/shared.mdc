@@ -6,7 +6,7 @@ Every time explain what some features/methods do in temporary comments. Don't ad
 The schema of the database is in docs/Database.md—this is an example of how it will look in the future. Always check the current structure.
 Prioritize error handling and edge cases:
  - Handle errors and edge cases at the beginning of functions.
- - Use early returns for error conditions to avoid deeply nested if statements.
+ - Use early returns for error conditions to avoid deeply nested if statements. Fail fast principle!
  - Place the happy path last in the function for improved readability.
  - Use guard clauses to handle preconditions and invalid states early.
  - Implement proper error logging and user-friendly error messages.

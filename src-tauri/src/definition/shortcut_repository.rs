@@ -1,150 +1,157 @@
+use std::fs;
+use std::path::PathBuf;
+
+use serde_json::{json, Value};
+
 use super::shortcut::Shortcut;
 use crate::config::AppConfig;
 
-pub struct ShortcutRepository;
+pub struct ShortcutRepository {
+    config_path: PathBuf,
+}
 
 impl ShortcutRepository {
     pub fn new() -> Result<Self, String> {
-        Ok(Self)
+        let config = AppConfig::global()
+            .lock()
+            .expect("Failed to lock config during save.");
+
+        let config_path = &config.settings_file;
+
+        if !config_path.exists() {
+            return Err("Settings file does not exist. Initialize config first.".to_string());
+        }
+
+        Ok(Self {
+            config_path: config_path.clone(),
+        })
+    }
+
+    fn read_settings(&self) -> Result<Value, String> {
+        let content = fs::read_to_string(&self.config_path)
+            .map_err(|e| format!("Failed to read settings file: {}", e))?;
+
+        let parsed: Value = serde_json::from_str(&content)
+            .map_err(|e| format!("Failed to parse settings file: {}", e))?;
+
+        if !parsed.is_object() {
+            return Err("Settings file has invalid structure".to_string());
+        }
+
+        Ok(parsed)
+    }
+
+    fn write_settings(&self, settings: &Value) -> Result<(), String> {
+        let content = serde_json::to_string_pretty(settings)
+            .map_err(|e| format!("Failed to serialize settings: {}", e))?;
+
+        fs::write(&self.config_path, content)
+            .map_err(|e| format!("Failed to write settings file: {}", e))
     }
 
     pub fn save(&self, shortcut: &Shortcut) -> Result<(), String> {
         log::debug!("Saving shortcut: {:?}", shortcut);
 
-        let config = AppConfig::global()
-            .lock()
-            .expect("Failed to lock config during save.");
+        let mut settings = self.read_settings()?;
 
-        let file_path = &config.settings_file;
-
-        let content = match std::fs::read_to_string(file_path) {
-            Ok(content) => content,
-            Err(e) => {
-                log::error!("Failed to read shortcuts file: {}", e);
-                "[]".to_string()
-            }
-        };
-
-        let mut shortcuts: Vec<Shortcut> = match serde_json::from_str(&content) {
-            Ok(shortcuts) => shortcuts,
-            Err(e) => {
-                log::error!("Failed to parse shortcuts JSON: {}", e);
-                Vec::new()
-            }
-        };
-
-        shortcuts.retain(|s| s.id != shortcut.id);
-
-        shortcuts.push(shortcut.clone());
-
-        let json = match serde_json::to_string_pretty(&shortcuts) {
-            Ok(json) => json,
-            Err(e) => return Err(e.to_string()),
-        };
-
-        match std::fs::write(file_path, json) {
-            Ok(_) => {
-                log::debug!("Shortcut saved successfully");
-                Ok(())
-            }
-            Err(e) => Err(e.to_string()),
+        if !settings.get("shortcuts").is_some() {
+            return Err("Shortcuts structure not found in settings".to_string());
         }
-    }
 
-    pub fn get_current(&self) -> Result<Shortcut, String> {
-        let config = AppConfig::global()
-            .lock()
-            .expect("Failed to lock config during retrieval.");
-        let content = std::fs::read_to_string(&config.settings_file).map_err(|e| e.to_string())?;
+        let shortcuts = settings["shortcuts"]
+            .as_array_mut()
+            .ok_or_else(|| "Shortcuts is not an array".to_string())?;
 
-        serde_json::from_str(&content).map_err(|e| e.to_string())
+        let existing_index = shortcuts
+            .iter()
+            .position(|s| s.get("id").and_then(|id| id.as_str()) == Some(&shortcut.id));
+
+        if let Some(index) = existing_index {
+            shortcuts.remove(index);
+        }
+
+        shortcuts.push(
+            serde_json::to_value(shortcut)
+                .map_err(|e| format!("Failed to serialize shortcut: {}", e))?,
+        );
+
+        settings["lastUpdated"] = json!(chrono::Utc::now().to_rfc3339());
+
+        self.write_settings(&settings)?;
+        log::debug!("Shortcut saved successfully");
+        Ok(())
     }
 
     pub fn delete(&self, id: &str) -> Result<(), String> {
-        let config = AppConfig::global()
-            .lock()
-            .expect("Failed to lock config during deletion.");
-        let file_path = &config.settings_file;
+        log::debug!("Deleting shortcut with id: {}", id);
 
-        let content = std::fs::read_to_string(file_path).map_err(|e| e.to_string())?;
+        let mut settings = self.read_settings()?;
 
-        let mut shortcuts: Vec<Shortcut> =
-            serde_json::from_str(&content).map_err(|e| e.to_string())?;
+        if let Some(shortcuts) = settings["shortcuts"].as_array_mut() {
+            let len_before = shortcuts.len();
+            shortcuts.retain(|s| s.get("id").and_then(|id| id.as_str()) != Some(id));
 
-        if let Some(index) = shortcuts.iter().position(|s| s.id == id) {
-            shortcuts.remove(index);
+            if len_before == shortcuts.len() {
+                return Err(format!("Shortcut with ID {} not found", id));
+            }
 
-            let json = serde_json::to_string(&shortcuts).map_err(|e| e.to_string())?;
+            settings["lastUpdated"] = json!(chrono::Utc::now().to_rfc3339());
 
-            std::fs::write(file_path, json).map_err(|e| e.to_string())?;
-
-            Ok(())
-        } else {
-            Err(format!("Shortcut with id {} not found", id))
+            self.write_settings(&settings)?;
+            log::debug!("Shortcut deleted successfully");
+            return Ok(());
         }
+
+        Err("Shortcuts array not found in settings".to_string())
     }
 
     pub fn get_all(&self) -> Result<Vec<Shortcut>, String> {
         log::debug!("Fetching all shortcuts from repository");
-        let config = AppConfig::global()
-            .lock()
-            .expect("Failed to lock config during retrieval.");
 
-        let file_path = &config.settings_file;
-        log::trace!("Reading shortcuts from file: {}", file_path.display());
+        let settings = self.read_settings()?;
 
-        let content = match std::fs::read_to_string(file_path) {
-            Ok(content) => content,
-            Err(e) => {
-                log::error!("Failed to read shortcuts file: {}", e);
-                return Err(e.to_string());
-            }
-        };
+        if !settings.get("shortcuts").is_some() {
+            return Err("Shortcuts structure not found in settings".to_string());
+        }
 
-        match serde_json::from_str::<Vec<Shortcut>>(&content) {
-            Ok(shortcuts) => {
-                log::debug!("Successfully loaded {} shortcuts", shortcuts.len());
-                Ok(shortcuts)
-            }
-            Err(e) => {
-                log::error!("Failed to parse shortcuts JSON: {}", e);
-                Ok(Vec::new())
+        let shortcuts = settings["shortcuts"]
+            .as_array()
+            .ok_or_else(|| "Shortcuts is not an array".to_string())?;
+
+        let mut result = Vec::new();
+        for shortcut_value in shortcuts {
+            match serde_json::from_value::<Shortcut>(shortcut_value.clone()) {
+                Ok(shortcut) => result.push(shortcut),
+                Err(e) => log::error!("Failed to parse shortcut: {}", e),
             }
         }
+
+        log::debug!("Successfully loaded {} shortcuts", result.len());
+        Ok(result)
     }
 
     pub fn get_by_id(&self, id: &str) -> Result<Shortcut, String> {
         log::debug!("Fetching shortcut with id: {}", id);
-        let config = AppConfig::global()
-            .lock()
-            .expect("Failed to lock config during retrieval.");
 
-        let file_path = &config.settings_file;
-        log::trace!("Reading shortcuts from file: {}", file_path.display());
+        let settings = self.read_settings()?;
 
-        let content = match std::fs::read_to_string(file_path) {
-            Ok(content) => content,
-            Err(e) => {
-                log::error!("Failed to read shortcuts file: {}", e);
-                return Err(e.to_string());
-            }
-        };
+        if !settings.get("shortcuts").is_some() {
+            return Err(format!("Shortcut with id {} not found", id));
+        }
 
-        match serde_json::from_str::<Vec<Shortcut>>(&content) {
-            Ok(shortcuts) => {
-                if let Some(shortcut) = shortcuts.iter().find(|s| s.id == id) {
-                    log::debug!("Successfully found shortcut with id: {}", id);
-                    Ok(shortcut.clone())
-                } else {
-                    let error_msg = format!("Shortcut with id {} not found", id);
-                    log::error!("{}", error_msg);
-                    Err(error_msg)
+        let shortcuts = settings["shortcuts"]
+            .as_array()
+            .ok_or_else(|| "Shortcuts is not an array".to_string())?;
+
+        for shortcut_value in shortcuts {
+            if let Some(shortcut_id) = shortcut_value.get("id").and_then(|id| id.as_str()) {
+                if shortcut_id == id {
+                    return serde_json::from_value::<Shortcut>(shortcut_value.clone())
+                        .map_err(|e| format!("Failed to parse shortcut: {}", e));
                 }
             }
-            Err(e) => {
-                log::error!("Failed to parse shortcuts JSON: {}", e);
-                Err(e.to_string())
-            }
         }
+
+        Err(format!("Shortcut with id {} not found", id))
     }
 }

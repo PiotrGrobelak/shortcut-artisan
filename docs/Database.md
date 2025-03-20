@@ -26,18 +26,18 @@
     - **name**: Display name
     - **icon**: Folder icon
     - **color**: Folder color
-    - **items**: Array of shortcut IDs in this folder
-  - **shortcuts**: Collection of shortcuts
-    - **shortcut1, shortcut2, etc.**: Individual shortcuts
-      - **id**: Unique shortcut identifier
-      - **name**: Display name
-      - **url**: Target URL
-      - **icon**: Shortcut icon
-      - **folderId**: Reference to the folder this shortcut belongs to
-      - **tags**: Categorization tags
-      - **lastAccessed**: Last usage timestamp
-  - **favorites**: Array of shortcut IDs marked as favorites
-  - **recent**: Array of recently used shortcut IDs
+    - **shortcut_ids**: Array of shortcut IDs in this folder
+- **shortcuts**: Collection of shortcuts
+  - **shortcut1, shortcut2, etc.**: Individual shortcuts
+    - **id**: Unique shortcut identifier
+    - **name**: Display name
+    - **url**: Target URL
+    - **icon**: Shortcut icon
+    - **folderId**: Reference to the folder this shortcut belongs to
+    - **tags**: Categorization tags
+    - **lastAccessed**: Last usage timestamp
+- **favorites**: Array of shortcut IDs marked as favorites
+- **recent**: Array of recently used shortcut IDs
 
 ### Feature Configuration
 

@@ -1,11 +1,10 @@
 use std::fs;
 use std::path::PathBuf;
 
-use log::error;
 use serde_json::{json, Value};
 
-use crate::config::AppConfig;
 use super::folder::Folder;
+use crate::config::AppConfig;
 
 pub struct FolderRepository {
     config_path: PathBuf,
@@ -16,80 +15,48 @@ impl FolderRepository {
         let config = AppConfig::global()
             .lock()
             .expect("Failed to lock config during save.");
-        
-        let config_path = &config.settings_file;    
+
+        let config_path = &config.settings_file;
 
         if !config_path.exists() {
-            let default_settings = json!({
-                "version": "1.0.0",
-                "lastUpdated": chrono::Utc::now().to_rfc3339(),
-                "shortcuts": {
-                    "folders": []
-                }
-            });
-
-            fs::write(
-                &config_path,
-                serde_json::to_string_pretty(&default_settings).unwrap(),
-            )
-            .map_err(|e| format!("Failed to create settings file: {}", e))?;
+            return Err("Settings file does not exist. Initialize config first.".to_string());
         }
 
-        Ok(Self { config_path: config_path.clone() })
+        Ok(Self {
+            config_path: config_path.clone(),
+        })
     }
 
     fn read_settings(&self) -> Result<Value, String> {
         let content = fs::read_to_string(&self.config_path)
             .map_err(|e| format!("Failed to read settings file: {}", e))?;
-        
+
         let parsed: Value = serde_json::from_str(&content)
             .map_err(|e| format!("Failed to parse settings file: {}", e))?;
-        
-        // Make sure we have a valid JSON object
+
         if !parsed.is_object() {
-            // If the root is not an object, create a new valid structure
-            log::warn!("Settings file has invalid root structure, creating new settings");
-            
-            let new_settings = json!({
-                "version": "1.0.0",
-                "lastUpdated": chrono::Utc::now().to_rfc3339(),
-                "shortcuts": {
-                    "folders": []
-                }
-            });
-            
-            self.write_settings(&new_settings)?;
-            return Ok(new_settings);
+            return Err("Settings file has invalid structure".to_string());
         }
-        
+
         Ok(parsed)
     }
 
     fn write_settings(&self, settings: &Value) -> Result<(), String> {
         let content = serde_json::to_string_pretty(settings)
             .map_err(|e| format!("Failed to serialize settings: {}", e))?;
-        
+
         fs::write(&self.config_path, content)
             .map_err(|e| format!("Failed to write settings file: {}", e))
     }
 
     pub fn get_all_folders(&self) -> Result<Vec<Folder>, String> {
-        let mut settings = self.read_settings()?;
-        
-        if !settings.get("shortcuts").and_then(|s| s.get("folders")).is_some() {
-            if !settings.get("shortcuts").is_some() {
-                settings["shortcuts"] = json!({});
-            }
-            
-            settings["shortcuts"]["folders"] = json!([]);
-            
-            self.write_settings(&settings)?;
-            
-            log::info!("Created missing shortcuts.folders structure in settings");
-            return Ok(Vec::new());
+        let settings = self.read_settings()?;
+
+        if !settings.get("folders").is_some() {
+            return Err("Folders structure not found in settings".to_string());
         }
 
-        let folders = settings["shortcuts"]["folders"]
+        let folders = settings["folders"]
             .as_array()
             .ok_or_else(|| "Folders is not an array".to_string())?;
 
@@ -97,7 +64,7 @@ impl FolderRepository {
         for folder_value in folders {
             match serde_json::from_value::<Folder>(folder_value.clone()) {
                 Ok(folder) => result.push(folder),
-                Err(e) => error!("Failed to parse folder: {}", e),
+                Err(e) => log::error!("Failed to parse folder: {}", e),
             }
         }
 
@@ -106,7 +73,7 @@ impl FolderRepository {
 
     pub fn get_folder_by_id(&self, id: &str) -> Result<Folder, String> {
         let folders = self.get_all_folders()?;
-        
+
         folders
             .into_iter()
             .find(|f| f.id == id)
@@ -116,51 +83,49 @@ impl FolderRepository {
     pub fn save_folder(&self, folder: &Folder) -> Result<(), String> {
         let mut settings = self.read_settings()?;
 
-        if !settings.get("shortcuts").is_some() {
-            settings["shortcuts"] = json!({});
-        }
-        if !settings["shortcuts"].get("folders").is_some() {
-            settings["shortcuts"]["folders"] = json!([]);
+        if !settings.get("folders").is_some() {
+            return Err("Folders structure not found in settings".to_string());
         }
 
-        let folders = settings["shortcuts"]["folders"]
+        let folders = settings["folders"]
             .as_array_mut()
             .ok_or_else(|| "Folders is not an array".to_string())?;
-        
+
         let existing_index = folders
             .iter()
             .position(|f| f.get("id").and_then(|id| id.as_str()) == Some(&folder.id));
-        
+
+        let folder_json = serde_json::to_value(folder)
+            .map_err(|e| format!("Failed to serialize folder: {}", e))?;
+
         if let Some(index) = existing_index {
-            folders[index] = serde_json::to_value(folder)
-                .map_err(|e| format!("Failed to serialize folder: {}", e))?;
+            folders[index] = folder_json;
         } else {
-            folders.push(serde_json::to_value(folder)
-                .map_err(|e| format!("Failed to serialize folder: {}", e))?);
+            folders.push(folder_json);
         }
-        
+
         settings["lastUpdated"] = json!(chrono::Utc::now().to_rfc3339());
-        
+
         self.write_settings(&settings)
     }
 
     pub fn delete_folder(&self, id: &str) -> Result<(), String> {
         let mut settings = self.read_settings()?;
-        
-        if let Some(folders) = settings["shortcuts"]["folders"].as_array_mut() {
+
+        if let Some(folders) = settings["folders"].as_array_mut() {
             let len_before = folders.len();
             folders.retain(|f| f.get("id").and_then(|id| id.as_str()) != Some(id));
-            
+
             if len_before == folders.len() {
                 return Err(format!("Folder with ID {} not found", id));
             }
-            
+
             settings["lastUpdated"] = json!(chrono::Utc::now().to_rfc3339());
-            
+
             self.write_settings(&settings)?;
             return Ok(());
         }
-        
+
         Err("Folders array not found in settings".to_string())
     }
 
@@ -170,9 +135,13 @@ impl FolderRepository {
         self.save_folder(&folder)
     }
 
-    pub fn remove_shortcut_from_folder(&self, folder_id: &str, shortcut_id: &str) -> Result<(), String> {
+    pub fn remove_shortcut_from_folder(
+        &self,
+        folder_id: &str,
+        shortcut_id: &str,
+    ) -> Result<(), String> {
         let mut folder = self.get_folder_by_id(folder_id)?;
         folder.remove_shortcut(shortcut_id);
         self.save_folder(&folder)
     }
-} 
+}
