@@ -21,7 +21,6 @@ import { PlusCircle, X } from "lucide-react";
 export default function Main() {
   const dispatch = useDispatch<AppDispatch>();
   const {
-    items: shortcuts,
     listLoading: shortcutsLoading,
     folderShortcuts,
     folderShortcutsLoading,
@@ -97,7 +96,6 @@ export default function Main() {
   };
 
   const isLoading = shortcutsLoading || folderShortcutsLoading;
-  const displayShortcuts = selectedFolder ? folderShortcuts : shortcuts;
   const error = shortcutsError || foldersError;
 
   if (error) {
@@ -178,8 +176,8 @@ export default function Main() {
             <div>Loading shortcuts...</div>
           ) : (
             <div className="space-y-3">
-              {displayShortcuts.length > 0 ? (
-                displayShortcuts.map((shortcut) => (
+              {folderShortcuts.length > 0 ? (
+                folderShortcuts.map((shortcut) => (
                   <ShortcutCard
                     key={shortcut.id}
                     id={shortcut.id}

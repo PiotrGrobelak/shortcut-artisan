@@ -212,7 +212,6 @@ const shortcutsSlice = createSlice({
       }
     );
 
-    // Add reducers for fetching shortcuts by folder ID
     builder.addCase(
       fetchShortcutsByFolderId.pending,
       (state: ShortcutsState) => {

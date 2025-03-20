@@ -145,8 +145,10 @@ impl ShortcutRepository {
 
         let mut result = Vec::new();
         for shortcut_value in shortcuts {
-            if let Some(folder_id) = shortcut_value.get("folder_id").and_then(|id| id.as_str()) {
-                if folder_id == folder_id {
+            if let Some(shortcut_folder_id) =
+                shortcut_value.get("folder_id").and_then(|id| id.as_str())
+            {
+                if folder_id == shortcut_folder_id {
                     match serde_json::from_value::<Shortcut>(shortcut_value.clone()) {
                         Ok(shortcut) => result.push(shortcut),
                         Err(e) => log::error!("Failed to parse shortcut: {}", e),
