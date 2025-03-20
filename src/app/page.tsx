@@ -222,8 +222,11 @@ export default function Main() {
             )}
           </div>
 
-          {selectedShortcut ? (
-            <ManageShortcuts selectedShortcutId={selectedShortcut} />
+          {selectedShortcut && selectedFolder ? (
+            <ManageShortcuts
+              selectedShortcutId={selectedShortcut}
+              folder_id={selectedFolder}
+            />
           ) : (
             <div className="text-center text-gray-500 p-12 border border-dashed rounded-lg">
               No shortcut selected. Select a shortcut from the list or create a

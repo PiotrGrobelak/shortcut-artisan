@@ -14,11 +14,13 @@ import { ActionType } from "@/services/shortcuts/shortcuts.model";
 
 interface ManageShortcutsProps {
   selectedShortcutId?: string | null;
+  folder_id: string;
 }
 
 export default function ManageShortcuts({
   selectedShortcutId,
-}: ManageShortcutsProps = {}) {
+  folder_id,
+}: ManageShortcutsProps) {
   const dispatch = useDispatch<AppDispatch>();
   const { detailLoading, createLoading, error, currentShortcut } = useSelector(
     (state: RootState) => state.shortcuts
@@ -35,6 +37,7 @@ export default function ManageShortcuts({
       shortcut: values.shortcut,
       name: values.name,
       description: values.description,
+      folder_id,
       actions: [
         {
           action_type: values.actionType,
