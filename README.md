@@ -7,7 +7,6 @@ ShortcutArtisan is an application for creating and managing custom keyboard shor
 ### 🖥️ Frontend
 
 - **Framework**: [Next.js](https://nextjs.org/) (v15)
-- **UI Library**: [React](https://reactjs.org/) (v19)
 - **Styling**: [TailwindCSS](https://tailwindcss.com/) with shadcn/ui components
 - **State Management** [Redux Toolkit](https://redux-toolkit.js.org/)
 
@@ -15,7 +14,6 @@ ShortcutArtisan is an application for creating and managing custom keyboard shor
 
 - **Framework**: [Tauri](https://tauri.app/) (v2) - Rust-based desktop application framework
 - **Rust Dependencies**:
-  - Tauri Plugin Global Shortcut - For registering system-wide keyboard shortcuts
   - Tokio - Asynchronous runtime
   - Serde - Serialization/deserialization
   - UUID - Unique identifier generation
