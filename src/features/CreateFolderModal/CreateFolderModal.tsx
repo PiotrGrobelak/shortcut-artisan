@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -62,9 +63,15 @@ export const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent
+        className="sm:max-w-[425px]"
+        aria-describedby="folder-modal-description"
+      >
         <DialogHeader>
           <DialogTitle>Create New Folder</DialogTitle>
+          <DialogDescription id="folder-modal-description">
+            Create a new folder to organize your shortcuts.
+          </DialogDescription>
         </DialogHeader>
         <FolderForm
           initialValues={initialValues}

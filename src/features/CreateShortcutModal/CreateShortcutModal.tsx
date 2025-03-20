@@ -77,7 +77,10 @@ export default function CreateNewShortcutModal({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent
+        className="sm:max-w-[600px]"
+        aria-describedby="shortcut-modal-description"
+      >
         <DialogHeader>
           <DialogTitle>Create New Shortcut</DialogTitle>
         </DialogHeader>
