@@ -36,6 +36,15 @@ pub async fn get_shortcut_by_id(app_handle: AppHandle, id: String) -> Result<Sho
 }
 
 #[tauri::command]
+pub async fn get_shortcuts_by_folder_id(
+    app_handle: AppHandle,
+    folder_id: String,
+) -> Result<Vec<Shortcut>, String> {
+    let facade = DefinitionFacade::new(app_handle)?;
+    facade.get_shortcuts_by_folder_id(&folder_id)
+}
+
+#[tauri::command]
 pub async fn update_shortcut(
     app_handle: AppHandle,
     id: String,

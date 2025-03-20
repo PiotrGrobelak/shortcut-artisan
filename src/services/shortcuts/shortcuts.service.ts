@@ -6,6 +6,12 @@ export const ShortcutsService = {
     return await apiClient.invoke<Shortcut[]>("get_shortcuts");
   },
 
+  getAllByFolderId: async (folderId: string): Promise<Shortcut[]> => {
+    return await apiClient.invoke<Shortcut[]>("get_shortcuts_by_folder_id", {
+      folderId,
+    });
+  },
+
   getById: async (id: string): Promise<Shortcut> => {
     return await apiClient.invoke<Shortcut>("get_shortcut_by_id", { id });
   },

@@ -79,6 +79,11 @@ impl DefinitionFacade {
         self.shortcut_repository.get_by_id(id)
     }
 
+    pub fn get_shortcuts_by_folder_id(&self, folder_id: &str) -> Result<Vec<Shortcut>, String> {
+        self.shortcut_repository
+            .get_shortcuts_by_folder_id(folder_id)
+    }
+
     pub async fn delete_shortcut(&self, id: &str) -> Result<(), String> {
         if let Ok(shortcut) = self.shortcut_repository.get_by_id(id) {
             let execution_facade = ExecutionFacade::new(self.app_handle.clone());

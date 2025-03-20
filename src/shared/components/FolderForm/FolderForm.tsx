@@ -25,7 +25,9 @@ export const FolderForm: React.FC<FolderFormProps> = ({
   const [values, setValues] = useState<FolderPayload>(initialValues);
 
   useEffect(() => {
-    setValues(initialValues);
+    if (JSON.stringify(values) !== JSON.stringify(initialValues)) {
+      setValues(initialValues);
+    }
   }, [initialValues]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

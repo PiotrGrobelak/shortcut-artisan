@@ -8,7 +8,8 @@ use config::commands::get_raw_settings;
 use config::AppConfig;
 use definition::commands::{
     create_folder, delete_folder, delete_shortcut, get_folder_by_id, get_folders,
-    get_shortcut_by_id, get_shortcuts, save_shortcut, update_folder, update_shortcut,
+    get_shortcut_by_id, get_shortcuts, get_shortcuts_by_folder_id, save_shortcut, update_folder,
+    update_shortcut,
 };
 use execution::setup_global_shortcut_plugin;
 use execution::ExecutionFacade;
@@ -28,6 +29,7 @@ pub fn run() {
             delete_shortcut,
             get_shortcuts,
             get_shortcut_by_id,
+            get_shortcuts_by_folder_id,
             update_shortcut,
             get_raw_settings,
             create_folder,

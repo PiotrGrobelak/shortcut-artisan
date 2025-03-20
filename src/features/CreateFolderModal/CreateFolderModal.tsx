@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { FolderForm } from "@/shared/components/FolderForm/FolderForm";
 import { FolderPayload } from "@/services/shortcuts/folder.model";
 import { FolderService } from "@/services/shortcuts/folder.service";
@@ -23,28 +23,41 @@ export const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (values: FolderPayload) => {
-    try {
-      setIsSubmitting(true);
-      const newFolder = await FolderService.create(values);
+  const handleSubmit = useCallback(
+    async (values: FolderPayload) => {
+      try {
+        setIsSubmitting(true);
+        const newFolder = await FolderService.create(values);
 
-      toast.success("Folder created", {
-        description: `Folder "${values.name}" has been created successfully.`,
-      });
+        toast.success("Folder created", {
+          description: `Folder "${values.name}" has been created successfully.`,
+        });
 
-      onOpenChange(false);
+        if (onFolderCreated) {
+          onFolderCreated(newFolder.id);
+        }
 
-      if (onFolderCreated) {
-        onFolderCreated(newFolder.id);
+        onOpenChange(false);
+      } catch (error) {
+        console.error("Failed to create folder:", error);
+        toast.error("Error", {
+          description: "Failed to create folder. Please try again.",
+        });
+      } finally {
+        setIsSubmitting(false);
       }
-    } catch (error) {
-      console.error("Failed to create folder:", error);
-      toast.error("Error", {
-        description: "Failed to create folder. Please try again.",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    },
+    [onOpenChange, onFolderCreated]
+  );
+
+  const handleCancel = useCallback(() => {
+    onOpenChange(false);
+  }, [onOpenChange]);
+
+  const initialValues = {
+    name: "",
+    icon: "",
+    color: "#2563eb",
   };
 
   return (
@@ -54,8 +67,9 @@ export const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
           <DialogTitle>Create New Folder</DialogTitle>
         </DialogHeader>
         <FolderForm
+          initialValues={initialValues}
           onSubmit={handleSubmit}
-          onCancel={() => onOpenChange(false)}
+          onCancel={handleCancel}
           isSubmitting={isSubmitting}
         />
       </DialogContent>

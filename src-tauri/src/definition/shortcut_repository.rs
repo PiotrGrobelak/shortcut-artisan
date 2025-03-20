@@ -130,6 +130,35 @@ impl ShortcutRepository {
         Ok(result)
     }
 
+    pub fn get_shortcuts_by_folder_id(&self, folder_id: &str) -> Result<Vec<Shortcut>, String> {
+        log::debug!("Fetching shortcuts by folder id: {}", folder_id);
+
+        let settings = self.read_settings()?;
+
+        if !settings.get("shortcuts").is_some() {
+            return Err("Shortcuts structure not found in settings".to_string());
+        }
+
+        let shortcuts = settings["shortcuts"]
+            .as_array()
+            .ok_or_else(|| "Shortcuts is not an array".to_string())?;
+
+        let mut result = Vec::new();
+        for shortcut_value in shortcuts {
+            if let Some(folder_id) = shortcut_value.get("folder_id").and_then(|id| id.as_str()) {
+                if folder_id == folder_id {
+                    match serde_json::from_value::<Shortcut>(shortcut_value.clone()) {
+                        Ok(shortcut) => result.push(shortcut),
+                        Err(e) => log::error!("Failed to parse shortcut: {}", e),
+                    }
+                }
+            }
+        }
+
+        log::debug!("Successfully loaded {} shortcuts", result.len());
+        Ok(result)
+    }
+
     pub fn get_by_id(&self, id: &str) -> Result<Shortcut, String> {
         log::debug!("Fetching shortcut with id: {}", id);
 

@@ -5,7 +5,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/shared/store";
 import {
   fetchShortcuts,
+  fetchShortcutsByFolderId,
   deleteShortcut,
+  clearFolderShortcuts,
 } from "@/shared/store/slices/shortcutsSlice";
 import { fetchFolders } from "@/shared/store/slices/folderSlice";
 import { ShortcutCard } from "@/shared/components/ShortcutCard";
@@ -21,6 +23,8 @@ export default function Main() {
   const {
     items: shortcuts,
     listLoading: shortcutsLoading,
+    folderShortcuts,
+    folderShortcutsLoading,
     error: shortcutsError,
   } = useSelector((state: RootState) => state.shortcuts);
 
@@ -35,22 +39,33 @@ export default function Main() {
   const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false);
 
   useEffect(() => {
-    dispatch(fetchShortcuts());
     dispatch(fetchFolders());
+    dispatch(fetchShortcuts());
   }, [dispatch]);
 
-  // Set first folder as selected when folders are loaded
   useEffect(() => {
     if (folders.length > 0 && !selectedFolder) {
       setSelectedFolder(folders[0].id);
     }
   }, [folders, selectedFolder]);
 
+  useEffect(() => {
+    if (selectedFolder) {
+      dispatch(fetchShortcutsByFolderId(selectedFolder));
+    } else {
+      dispatch(clearFolderShortcuts());
+    }
+  }, [selectedFolder, dispatch]);
+
   const handleDelete = async (id: string) => {
     try {
       await dispatch(deleteShortcut(id)).unwrap();
       if (selectedShortcut === id) {
         setSelectedShortcut(null);
+      }
+
+      if (selectedFolder) {
+        dispatch(fetchShortcutsByFolderId(selectedFolder));
       }
     } catch (error) {
       console.error("Failed to delete shortcut:", error);
@@ -67,23 +82,22 @@ export default function Main() {
 
   const handleFolderCreated = (folderId: string) => {
     setSelectedFolder(folderId);
+    setIsCreateFolderModalOpen(false);
+    dispatch(fetchShortcutsByFolderId(folderId));
   };
 
-  // Get shortcuts for selected folder
-  const getFilteredShortcuts = () => {
-    if (!selectedFolder) return shortcuts;
+  const handleModalOpenChange = (open: boolean) => {
+    setIsCreateFolderModalOpen(open);
+  };
 
+  const getCurrentFolderName = () => {
+    if (!selectedFolder) return "All Shortcuts";
     const currentFolder = folders.find((f) => f.id === selectedFolder);
-    if (!currentFolder) return shortcuts;
-
-    return shortcuts.filter(
-      (shortcut) =>
-        currentFolder.shortcut_ids.includes(shortcut.id) ||
-        shortcut.folder_id === selectedFolder
-    );
+    return currentFolder ? `${currentFolder.name} Shortcuts` : "Shortcuts";
   };
 
-  const filteredShortcuts = getFilteredShortcuts();
+  const isLoading = shortcutsLoading || folderShortcutsLoading;
+  const displayShortcuts = selectedFolder ? folderShortcuts : shortcuts;
   const error = shortcutsError || foldersError;
 
   if (error) {
@@ -135,22 +149,21 @@ export default function Main() {
 
           <CreateFolderModal
             open={isCreateFolderModalOpen}
-            onOpenChange={setIsCreateFolderModalOpen}
+            onOpenChange={handleModalOpenChange}
             onFolderCreated={handleFolderCreated}
           />
         </div>
 
         <div className="col-span-3 border-r p-4 overflow-y-auto">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">
-              {selectedFolder
-                ? folders.find((f) => f.id === selectedFolder)?.name +
-                  " Shortcuts"
-                : "Shortcuts"}
-            </h2>
+            <h2 className="text-xl font-bold">{getCurrentFolderName()}</h2>
             <CreateNewShortcutModal
+              folderId={selectedFolder}
               onSuccess={(id) => {
                 setSelectedShortcut(id);
+                if (selectedFolder) {
+                  dispatch(fetchShortcutsByFolderId(selectedFolder));
+                }
               }}
               trigger={
                 <Button size="sm" variant="ghost">
@@ -161,29 +174,29 @@ export default function Main() {
             />
           </div>
 
-          {shortcutsLoading ? (
+          {isLoading ? (
             <div>Loading shortcuts...</div>
           ) : (
             <div className="space-y-3">
-              {filteredShortcuts.map((shortcut) => (
-                <ShortcutCard
-                  key={shortcut.id}
-                  id={shortcut.id}
-                  commandName={shortcut.command_name}
-                  description={shortcut.description}
-                  keyCombination={shortcut.key_combination}
-                  onEdit={() => handleEdit(shortcut.id)}
-                  onDelete={(id) => {
-                    handleDelete(id);
-                    if (selectedShortcut === id) {
-                      setSelectedShortcut(null);
-                    }
-                  }}
-                  isSelected={selectedShortcut === shortcut.id}
-                />
-              ))}
-
-              {filteredShortcuts.length === 0 && (
+              {displayShortcuts.length > 0 ? (
+                displayShortcuts.map((shortcut) => (
+                  <ShortcutCard
+                    key={shortcut.id}
+                    id={shortcut.id}
+                    commandName={shortcut.command_name}
+                    description={shortcut.description}
+                    keyCombination={shortcut.key_combination}
+                    onEdit={() => handleEdit(shortcut.id)}
+                    onDelete={(id) => {
+                      handleDelete(id);
+                      if (selectedShortcut === id) {
+                        setSelectedShortcut(null);
+                      }
+                    }}
+                    isSelected={selectedShortcut === shortcut.id}
+                  />
+                ))
+              ) : (
                 <div className="text-center text-gray-500 py-8">
                   No shortcuts in this folder
                 </div>

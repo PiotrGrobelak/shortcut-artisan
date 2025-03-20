@@ -20,11 +20,13 @@ import {
 interface CreateNewShortcutModalProps {
   trigger?: React.ReactNode;
   onSuccess?: (shortcutId: string) => void;
+  folderId: string | null;
 }
 
 export default function CreateNewShortcutModal({
   trigger,
   onSuccess,
+  folderId,
 }: CreateNewShortcutModalProps) {
   const dispatch = useDispatch<AppDispatch>();
   const [isOpen, setIsOpen] = useState(false);
@@ -33,10 +35,16 @@ export default function CreateNewShortcutModal({
   );
 
   const handleSubmit = async (values: ShortcutFormValues) => {
+    if (!folderId) {
+      console.error("Folder ID is required");
+      return;
+    }
+
     const payload = {
       shortcut: values.shortcut,
       name: values.name,
       description: values.description,
+      folder_id: folderId,
       actions: [
         {
           action_type: values.actionType,

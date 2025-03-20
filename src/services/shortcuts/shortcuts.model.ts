@@ -51,5 +51,5 @@ export interface ShortcutPayload {
   name: string;
   description?: string;
   actions: ShortcutAction[];
-  folder_id?: string;
+  folder_id: string;
 }

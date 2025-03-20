@@ -13,6 +13,8 @@ interface ShortcutsState {
   deleteLoading: boolean;
   error: string | null;
   currentShortcut?: Shortcut;
+  folderShortcuts: Shortcut[];
+  folderShortcutsLoading: boolean;
 }
 
 export const fetchShortcuts = createAsyncThunk(
@@ -22,6 +24,18 @@ export const fetchShortcuts = createAsyncThunk(
       return await ShortcutsService.getAll();
     } catch (error) {
       console.error("Failed to fetch shortcuts:", error);
+      return rejectWithValue(error);
+    }
+  }
+);
+
+export const fetchShortcutsByFolderId = createAsyncThunk(
+  "shortcuts/fetch-by-folder",
+  async (folderId: string, { rejectWithValue }) => {
+    try {
+      return await ShortcutsService.getAllByFolderId(folderId);
+    } catch (error) {
+      console.error(`Failed to fetch shortcuts for folder ${folderId}:`, error);
       return rejectWithValue(error);
     }
   }
@@ -83,6 +97,8 @@ const initialState: ShortcutsState = {
   createLoading: false,
   deleteLoading: false,
   error: null,
+  folderShortcuts: [],
+  folderShortcutsLoading: false,
 };
 
 const shortcutsSlice = createSlice({
@@ -91,6 +107,9 @@ const shortcutsSlice = createSlice({
   reducers: {
     clearError: (state: ShortcutsState) => {
       state.error = null;
+    },
+    clearFolderShortcuts: (state: ShortcutsState) => {
+      state.folderShortcuts = [];
     },
   },
   extraReducers: (builder) => {
@@ -192,8 +211,33 @@ const shortcutsSlice = createSlice({
         state.createLoading = false;
       }
     );
+
+    // Add reducers for fetching shortcuts by folder ID
+    builder.addCase(
+      fetchShortcutsByFolderId.pending,
+      (state: ShortcutsState) => {
+        state.folderShortcutsLoading = true;
+        state.error = null;
+      }
+    );
+    builder.addCase(
+      fetchShortcutsByFolderId.fulfilled,
+      (state: ShortcutsState, action) => {
+        state.folderShortcuts = action.payload;
+        state.folderShortcutsLoading = false;
+        state.error = null;
+      }
+    );
+    builder.addCase(
+      fetchShortcutsByFolderId.rejected,
+      (state: ShortcutsState, action) => {
+        state.folderShortcutsLoading = false;
+        state.error =
+          action.error.message || "Failed to fetch folder shortcuts";
+      }
+    );
   },
 });
 
-export const { clearError } = shortcutsSlice.actions;
+export const { clearError, clearFolderShortcuts } = shortcutsSlice.actions;
 export default shortcutsSlice.reducer;
