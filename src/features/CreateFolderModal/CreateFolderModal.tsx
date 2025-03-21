@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { FolderForm } from "@/shared/components/FolderForm/FolderForm";
-import { FolderPayload } from "@/services/shortcuts/folder.model";
+import { Folder, FolderPayload } from "@/services/shortcuts/folder.model";
 import { FolderService } from "@/services/shortcuts/folder.service";
 import { toast } from "sonner";
 import {
@@ -14,7 +14,7 @@ import {
 interface CreateFolderModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onFolderCreated?: (folderId: string) => void;
+  onFolderCreated?: (folder: Folder) => void;
 }
 
 export const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
@@ -35,7 +35,7 @@ export const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
         });
 
         if (onFolderCreated) {
-          onFolderCreated(newFolder.id);
+          onFolderCreated(newFolder);
         }
 
         onOpenChange(false);

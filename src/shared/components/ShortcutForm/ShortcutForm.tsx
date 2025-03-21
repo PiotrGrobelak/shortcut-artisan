@@ -18,7 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   BaseParameters,
   ActionType,
-} from "@/services/shortcuts/shortcuts.model";
+} from "@/services/shortcuts/shortcut.model";
 import { actionParameterRequirements } from "./ShortcutForm.model";
 export interface ShortcutFormValues {
   shortcut: string;

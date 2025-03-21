@@ -10,7 +10,7 @@ import {
   ShortcutForm,
   ShortcutFormValues,
 } from "@/shared/components/ShortcutForm/ShortcutForm";
-import { ActionType } from "@/services/shortcuts/shortcuts.model";
+import { ActionType } from "@/services/shortcuts/shortcut.model";
 
 interface ManageShortcutsProps {
   selectedShortcutId?: string | null;

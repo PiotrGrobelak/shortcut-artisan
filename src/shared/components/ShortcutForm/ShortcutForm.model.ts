@@ -1,7 +1,7 @@
 import {
   BaseParameters,
   ActionType,
-} from "@/services/shortcuts/shortcuts.model";
+} from "@/services/shortcuts/shortcut.model";
 
 export const actionParameterRequirements = {
   [ActionType.OpenFolder]: { required: ["path"] },

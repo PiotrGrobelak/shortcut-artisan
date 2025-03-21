@@ -3,8 +3,8 @@ import { FolderService } from "@/services/shortcuts/folder.service";
 import { Folder, FolderPayload } from "@/services/shortcuts/folder.model";
 
 interface FoldersState {
-  items: Folder[];
-  loading: boolean;
+  folders: Folder[];
+  foldersLoading: boolean;
   error: string | null;
   currentFolder?: Folder;
 }
@@ -44,18 +44,6 @@ export const deleteFolder = createAsyncThunk(
   }
 );
 
-export const fetchFolderById = createAsyncThunk(
-  "folders/fetch-by-id",
-  async (id: string, { rejectWithValue }) => {
-    try {
-      return await FolderService.getById(id);
-    } catch (error) {
-      console.error(`Failed to fetch folder with id ${id}:`, error);
-      return rejectWithValue(error);
-    }
-  }
-);
-
 export const updateFolder = createAsyncThunk(
   "folders/update",
   async (
@@ -71,8 +59,8 @@ export const updateFolder = createAsyncThunk(
 );
 
 const initialState: FoldersState = {
-  items: [],
-  loading: false,
+  folders: [],
+  foldersLoading: false,
   error: null,
 };
 
@@ -86,73 +74,69 @@ const folderSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch all folders
+      /**
+       * Fetch All Folders
+       */
       .addCase(fetchFolders.pending, (state) => {
-        state.loading = true;
+        state.foldersLoading = true;
         state.error = null;
       })
       .addCase(fetchFolders.fulfilled, (state, action) => {
-        state.items = action.payload;
-        state.loading = false;
+        state.folders = action.payload;
+        state.foldersLoading = false;
       })
       .addCase(fetchFolders.rejected, (state, action) => {
-        state.loading = false;
+        state.foldersLoading = false;
         state.error = action.error.message || "Failed to fetch folders";
       })
 
-      // Create folder
+      /**
+       * Create Folder
+       */
       .addCase(createFolder.pending, (state) => {
-        state.loading = true;
+        state.foldersLoading = true;
         state.error = null;
       })
       .addCase(createFolder.fulfilled, (state, action) => {
-        state.items.push(action.payload);
-        state.loading = false;
+        state.folders.push(action.payload);
+        state.foldersLoading = false;
       })
       .addCase(createFolder.rejected, (state, action) => {
-        state.loading = false;
+        state.foldersLoading = false;
         state.error = action.payload as string;
       })
 
-      // Delete folder
+      /**
+       * Delete Folder
+       */
       .addCase(deleteFolder.fulfilled, (state, action) => {
-        state.items = state.items.filter((item) => item.id !== action.payload);
+        state.folders = state.folders.filter(
+          (item) => item.id !== action.payload
+        );
       })
       .addCase(deleteFolder.rejected, (state, action) => {
         state.error = action.error.message || "Failed to delete folder";
       })
 
-      // Fetch folder by ID
-      .addCase(fetchFolderById.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchFolderById.fulfilled, (state, action) => {
-        state.currentFolder = action.payload;
-        state.loading = false;
-      })
-      .addCase(fetchFolderById.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || "Failed to fetch folder";
-      })
-
-      // Update folder
+      /**
+       * Update Folder
+       */
       .addCase(updateFolder.pending, (state) => {
-        state.loading = true;
+        state.foldersLoading = true;
         state.error = null;
       })
       .addCase(updateFolder.fulfilled, (state, action) => {
-        const index = state.items.findIndex(
+        const index = state.folders.findIndex(
           (item) => item.id === action.payload.id
         );
         if (index !== -1) {
-          state.items[index] = action.payload;
+          state.folders[index] = action.payload;
         }
         state.currentFolder = action.payload;
-        state.loading = false;
+        state.foldersLoading = false;
       })
       .addCase(updateFolder.rejected, (state, action) => {
-        state.loading = false;
+        state.foldersLoading = false;
         state.error = action.payload as string;
       });
   },

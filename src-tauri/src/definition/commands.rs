@@ -4,23 +4,22 @@ use crate::definition::shortcut::{Shortcut, ShortcutRequestPayload};
 use tauri::AppHandle;
 
 #[tauri::command]
-pub async fn save_shortcut(
+pub async fn create_shortcut(
     app_handle: AppHandle,
     payload: ShortcutRequestPayload,
 ) -> Result<Shortcut, String> {
     let facade = DefinitionFacade::new(app_handle)?;
-    facade.save_shortcut(payload).await
+    facade.create_shortcut(payload).await
 }
 
 #[tauri::command]
-pub async fn get_shortcuts(app_handle: AppHandle) -> Result<Vec<Shortcut>, String> {
+pub async fn update_shortcut(
+    app_handle: AppHandle,
+    id: String,
+    payload: ShortcutRequestPayload,
+) -> Result<Shortcut, String> {
     let facade = DefinitionFacade::new(app_handle)?;
-    let shortcuts = facade.get_all_shortcuts()?;
-
-    let filtered_shortcuts: Vec<Shortcut> =
-        shortcuts.into_iter().filter(|s| !s.id.is_empty()).collect();
-
-    Ok(filtered_shortcuts)
+    facade.update_shortcut(&id, payload).await
 }
 
 #[tauri::command]
@@ -45,16 +44,6 @@ pub async fn get_shortcuts_by_folder_id(
 }
 
 #[tauri::command]
-pub async fn update_shortcut(
-    app_handle: AppHandle,
-    id: String,
-    payload: ShortcutRequestPayload,
-) -> Result<Shortcut, String> {
-    let facade = DefinitionFacade::new(app_handle)?;
-    facade.update_shortcut(&id, payload).await
-}
-
-#[tauri::command]
 pub async fn create_folder(
     app_handle: AppHandle,
     payload: FolderRequestPayload,
@@ -67,12 +56,6 @@ pub async fn create_folder(
 pub async fn get_folders(app_handle: AppHandle) -> Result<Vec<Folder>, String> {
     let facade = DefinitionFacade::new(app_handle)?;
     facade.get_folders()
-}
-
-#[tauri::command]
-pub async fn get_folder_by_id(app_handle: AppHandle, id: String) -> Result<Folder, String> {
-    let facade = DefinitionFacade::new(app_handle)?;
-    facade.get_folder_by_id(&id)
 }
 
 #[tauri::command]

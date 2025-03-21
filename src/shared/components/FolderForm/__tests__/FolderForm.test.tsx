@@ -115,7 +115,6 @@ describe("FolderForm", () => {
 
     // Then
     await waitFor(() => {
-      // Then
       expect(defaultProps.onSubmit).toHaveBeenCalledTimes(1);
       expect(defaultProps.onSubmit).toHaveBeenCalledWith({
         name: "New Folder",

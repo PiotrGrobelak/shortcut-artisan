@@ -26,7 +26,7 @@ impl DefinitionFacade {
         })
     }
 
-    pub async fn save_shortcut(
+    pub async fn create_shortcut(
         &self,
         shortcut: ShortcutRequestPayload,
     ) -> Result<Shortcut, String> {
@@ -108,10 +108,6 @@ impl DefinitionFacade {
         self.shortcut_repository.delete(id)
     }
 
-    pub fn get_all_shortcuts(&self) -> Result<Vec<Shortcut>, String> {
-        self.shortcut_repository.get_all()
-    }
-
     pub async fn update_shortcut(
         &self,
         id: &str,
@@ -164,10 +160,6 @@ impl DefinitionFacade {
 
     pub fn get_folders(&self) -> Result<Vec<Folder>, String> {
         self.folder_repository.get_all_folders()
-    }
-
-    pub fn get_folder_by_id(&self, id: &str) -> Result<Folder, String> {
-        self.folder_repository.get_folder_by_id(id)
     }
 
     pub fn update_folder(&self, id: &str, payload: FolderRequestPayload) -> Result<Folder, String> {

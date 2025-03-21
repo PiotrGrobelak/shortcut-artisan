@@ -7,9 +7,8 @@ use analytics::setup_logging_plugin;
 use config::commands::get_raw_settings;
 use config::AppConfig;
 use definition::commands::{
-    create_folder, delete_folder, delete_shortcut, get_folder_by_id, get_folders,
-    get_shortcut_by_id, get_shortcuts, get_shortcuts_by_folder_id, save_shortcut, update_folder,
-    update_shortcut,
+    create_folder, create_shortcut, delete_folder, delete_shortcut, get_folders,
+    get_shortcut_by_id, get_shortcuts_by_folder_id, update_folder, update_shortcut,
 };
 use execution::setup_global_shortcut_plugin;
 use execution::ExecutionFacade;
@@ -25,9 +24,8 @@ pub fn run() {
         .plugin(setup_logging_plugin())
         .plugin(setup_global_shortcut_plugin())
         .invoke_handler(tauri::generate_handler![
-            save_shortcut,
+            create_shortcut,
             delete_shortcut,
-            get_shortcuts,
             get_shortcut_by_id,
             get_shortcuts_by_folder_id,
             update_shortcut,
@@ -36,7 +34,6 @@ pub fn run() {
             update_folder,
             delete_folder,
             get_folders,
-            get_folder_by_id,
         ])
         .setup(|app| {
             log::info!("Setup started!");

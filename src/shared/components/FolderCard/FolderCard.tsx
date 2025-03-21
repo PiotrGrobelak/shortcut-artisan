@@ -15,7 +15,6 @@ interface FolderCardProps {
   onEdit?: () => void;
   onDelete?: () => void;
   isSelected?: boolean;
-  className?: string;
 }
 
 export const FolderCard: React.FC<FolderCardProps> = ({
@@ -24,7 +23,6 @@ export const FolderCard: React.FC<FolderCardProps> = ({
   onEdit,
   onDelete,
   isSelected = false,
-  className = "",
 }) => {
   const handleClick = (e: React.MouseEvent) => {
     if (onClick) {
@@ -35,12 +33,11 @@ export const FolderCard: React.FC<FolderCardProps> = ({
 
   return (
     <div
-      className={`flex items-center justify-between p-3 rounded-md cursor-pointer hover:bg-muted transition-colors duration-200 ${
-        isSelected ? "bg-primary/10 border border-primary/30" : ""
-      } ${className}`}
+      className={`flex items-center justify-between p-4 rounded-md cursor-pointer
+ ${isSelected ? "bg-primary/10 border border-primary/30" : ""}`}
       onClick={handleClick}
     >
-      <div className="flex items-center">
+      <div className="flex items-center gap-2">
         <div
           className="h-9 w-9 flex items-center justify-center rounded-md mr-3"
           style={{ backgroundColor: folder.color || "#e2e8f0" }}
@@ -56,10 +53,7 @@ export const FolderCard: React.FC<FolderCardProps> = ({
       </div>
 
       {(onEdit || onDelete) && (
-        <div
-          onClick={(e) => e.stopPropagation()}
-          className="opacity-0 group-hover:opacity-100 transition-opacity"
-        >
+        <div onClick={(e) => e.stopPropagation()}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon">

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import CreateNewShortcutModal from "../CreateShortcutModal";
 import { ShortcutFormValues } from "@/shared/components/ShortcutForm/ShortcutForm";
-import { ActionType } from "@/services/shortcuts/shortcuts.model";
+import { ActionType } from "@/services/shortcuts/shortcut.model";
 
 // Create a mockResponse with ID that will be returned from the unwrap call
 const mockShortcutResponse = { id: "test-id" };

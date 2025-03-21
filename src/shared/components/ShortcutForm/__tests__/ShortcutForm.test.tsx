@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { ShortcutForm, ShortcutFormValues } from "../ShortcutForm";
-import { ActionType } from "@/services/shortcuts/shortcuts.model";
+import { ActionType } from "@/services/shortcuts/shortcut.model";
 
 const alertMock = vi.fn();
 window.alert = alertMock;

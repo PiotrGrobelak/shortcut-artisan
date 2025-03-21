@@ -1,33 +1,14 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { ShortcutsService } from "@/services/shortcuts/shortcuts.service";
-import {
-  Shortcut,
-  ShortcutPayload,
-} from "@/services/shortcuts/shortcuts.model";
+import { ShortcutsService } from "@/services/shortcuts/shortcut.service";
+import { Shortcut, ShortcutPayload } from "@/services/shortcuts/shortcut.model";
 
 interface ShortcutsState {
-  items: Shortcut[];
-  listLoading: boolean;
-  detailLoading: boolean;
-  createLoading: boolean;
-  deleteLoading: boolean;
-  error: string | null;
+  shortcuts: Shortcut[];
+  shortcutsLoading: boolean;
   currentShortcut?: Shortcut;
-  folderShortcuts: Shortcut[];
-  folderShortcutsLoading: boolean;
+  currentShortcutLoading: boolean;
+  error: string | null;
 }
-
-export const fetchShortcuts = createAsyncThunk(
-  "shortcuts/fetch-all",
-  async (_, { rejectWithValue }) => {
-    try {
-      return await ShortcutsService.getAll();
-    } catch (error) {
-      console.error("Failed to fetch shortcuts:", error);
-      return rejectWithValue(error);
-    }
-  }
-);
 
 export const fetchShortcutsByFolderId = createAsyncThunk(
   "shortcuts/fetch-by-folder",
@@ -91,14 +72,10 @@ export const updateShortcut = createAsyncThunk(
 );
 
 const initialState: ShortcutsState = {
-  items: [],
-  listLoading: false,
-  detailLoading: false,
-  createLoading: false,
-  deleteLoading: false,
+  currentShortcutLoading: false,
   error: null,
-  folderShortcuts: [],
-  folderShortcutsLoading: false,
+  shortcuts: [],
+  shortcutsLoading: false,
 };
 
 const shortcutsSlice = createSlice({
@@ -109,128 +86,132 @@ const shortcutsSlice = createSlice({
       state.error = null;
     },
     clearFolderShortcuts: (state: ShortcutsState) => {
-      state.folderShortcuts = [];
+      state.shortcuts = [];
     },
   },
   extraReducers: (builder) => {
-    builder.addCase(fetchShortcuts.pending, (state: ShortcutsState) => {
-      state.listLoading = true;
-      state.error = null;
-    });
-    builder.addCase(
-      fetchShortcuts.fulfilled,
-      (state: ShortcutsState, action) => {
-        state.items = action.payload;
-        state.listLoading = false;
-        state.error = null;
-      }
-    );
-    builder.addCase(
-      fetchShortcuts.rejected,
-      (state: ShortcutsState, action) => {
-        state.listLoading = false;
-        state.error = action.error.message || "Failed to fetch shortcuts";
-      }
-    );
-
+    /**
+     * Create Shortcut
+     */
     builder.addCase(createShortcut.pending, (state: ShortcutsState) => {
-      state.createLoading = true;
+      state.currentShortcutLoading = true;
       state.error = null;
     });
     builder.addCase(
       createShortcut.fulfilled,
       (state: ShortcutsState, action) => {
         if (action.payload) {
-          state.items.push(action.payload);
+          state.shortcuts.push(action.payload);
         }
-        state.createLoading = false;
+        state.currentShortcutLoading = false;
       }
     );
     builder.addCase(
       createShortcut.rejected,
       (state: ShortcutsState, action) => {
-        state.createLoading = false;
+        state.currentShortcutLoading = false;
         state.error = action.payload as string;
       }
     );
 
+    /**
+     * Delete Shortcut
+     */
     builder.addCase(
       deleteShortcut.fulfilled,
       (state: ShortcutsState, action) => {
-        state.items = state.items.filter((item) => item.id !== action.payload);
-        state.deleteLoading = false;
+        state.shortcuts = state.shortcuts.filter(
+          (item) => item.id !== action.payload
+        );
+        state.currentShortcutLoading = false;
         state.error = null;
       }
     );
     builder.addCase(deleteShortcut.pending, (state: ShortcutsState) => {
-      state.deleteLoading = true;
+      state.currentShortcutLoading = true;
       state.error = null;
     });
     builder.addCase(
       deleteShortcut.rejected,
       (state: ShortcutsState, action) => {
-        state.deleteLoading = false;
+        state.currentShortcutLoading = false;
         state.error = action.error.message || "Failed to delete shortcut";
       }
     );
 
+    /**
+     * Fetch Shortcut by ID
+     */
     builder.addCase(fetchShortcutById.pending, (state: ShortcutsState) => {
-      state.detailLoading = true;
+      state.currentShortcutLoading = true;
       state.error = null;
     });
     builder.addCase(
       fetchShortcutById.fulfilled,
       (state: ShortcutsState, action) => {
         state.currentShortcut = action.payload;
-        state.detailLoading = false;
+        state.currentShortcutLoading = false;
         state.error = null;
       }
     );
     builder.addCase(
       fetchShortcutById.rejected,
       (state: ShortcutsState, action) => {
-        state.detailLoading = false;
+        state.currentShortcutLoading = false;
         state.error = action.error.message || "Failed to fetch shortcut";
       }
     );
 
+    /**
+     * Update Shortcut
+     */
     builder.addCase(updateShortcut.pending, (state: ShortcutsState) => {
-      state.createLoading = true;
+      state.currentShortcutLoading = true;
       state.error = null;
     });
     builder.addCase(
       updateShortcut.fulfilled,
       (state: ShortcutsState, action) => {
-        const index = state.items.findIndex(
+        const index = state.shortcuts.findIndex(
           (item) => item.id === action.payload.id
         );
         if (index !== -1) {
-          state.items[index] = action.payload;
+          state.shortcuts[index] = action.payload;
         }
         state.currentShortcut = action.payload;
-        state.createLoading = false;
+        state.currentShortcutLoading = false;
+      }
+    );
+    builder.addCase(
+      updateShortcut.rejected,
+      (state: ShortcutsState, action) => {
+        state.currentShortcutLoading = false;
+        state.error = action.error.message || "Failed to update shortcut";
       }
     );
 
+    /**
+     * Fetch Shortcuts by Folder ID
+     */
     builder.addCase(
       fetchShortcutsByFolderId.pending,
       (state: ShortcutsState) => {
-        state.folderShortcutsLoading = true;
+        state.shortcutsLoading = true;
         state.error = null;
       }
     );
     builder.addCase(
       fetchShortcutsByFolderId.fulfilled,
       (state: ShortcutsState, action) => {
-        state.folderShortcuts = action.payload;
-        state.folderShortcutsLoading = false;
+        state.shortcuts = action.payload;
+        state.shortcutsLoading = false;
         state.error = null;
       }
     );
     builder.addCase(
       fetchShortcutsByFolderId.rejected,
       (state: ShortcutsState, action) => {
-        state.folderShortcutsLoading = false;
+        state.shortcutsLoading = false;
         state.error =
           action.error.message || "Failed to fetch folder shortcuts";
       }
