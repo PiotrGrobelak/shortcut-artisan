@@ -31,7 +31,7 @@ export default function CreateNewShortcutModal({
   const dispatch = useDispatch<AppDispatch>();
   const [isOpen, setIsOpen] = useState(false);
   const createLoading = useSelector(
-    (state: RootState) => state.shortcuts.createLoading
+    (state: RootState) => state.shortcuts.currentShortcutLoading
   );
 
   const handleSubmit = async (values: ShortcutFormValues) => {

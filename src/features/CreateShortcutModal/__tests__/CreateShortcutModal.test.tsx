@@ -4,7 +4,6 @@ import CreateNewShortcutModal from "../CreateShortcutModal";
 import { ShortcutFormValues } from "@/shared/components/ShortcutForm/ShortcutForm";
 import { ActionType } from "@/services/shortcuts/shortcut.model";
 
-// Create a mockResponse with ID that will be returned from the unwrap call
 const mockShortcutResponse = { id: "test-id" };
 
 const mockDispatch = vi.fn();
@@ -14,7 +13,6 @@ vi.mock("react-redux", async () => {
     ...actual,
     useDispatch: () => mockDispatch,
     useSelector: vi.fn().mockImplementation((selector) => {
-      // Return whatever state you want to mock here
       const mockState = {
         shortcuts: {
           createLoading: false,
@@ -63,7 +61,6 @@ describe("CreateNewShortcutModal", () => {
   beforeEach(() => {
     vi.resetAllMocks();
 
-    // Set up the mock dispatch to return a promise with unwrap method
     mockDispatch.mockReturnValue({
       unwrap: () => Promise.resolve(mockShortcutResponse),
     });

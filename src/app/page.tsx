@@ -8,15 +8,19 @@ import {
   deleteShortcut,
   clearFolderShortcuts,
 } from "@/shared/store/slices/shortcutsSlice";
-import { fetchFolders } from "@/shared/store/slices/folderSlice";
+import { fetchFolders, deleteFolder } from "@/shared/store/slices/folderSlice";
 import { ShortcutCard } from "@/shared/components/ShortcutCard";
 import { FolderCard } from "@/shared/components/FolderCard";
 import ManageShortcuts from "@/features/ManageShortcut/ManageShortcut";
 import CreateNewShortcutModal from "@/features/CreateShortcutModal/CreateShortcutModal";
-import { CreateFolderModal } from "@/features/CreateFolderModal";
+import {
+  ManageFolderModal,
+  FolderModalVariant,
+} from "@/features/ManageFolderModal";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, X } from "lucide-react";
 import { Folder } from "@/services/shortcuts/folder.model";
+import { toast } from "sonner";
 
 export default function Main() {
   const dispatch = useDispatch<AppDispatch>();
@@ -34,7 +38,10 @@ export default function Main() {
 
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
   const [selectedShortcut, setSelectedShortcut] = useState<string | null>(null);
-  const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false);
+  const [folderModalOpen, setFolderModalOpen] = useState(false);
+  const [folderModalVariant, setFolderModalVariant] =
+    useState<FolderModalVariant>("CREATE");
+  const [folderToEdit, setFolderToEdit] = useState<Folder | null>(null);
 
   useEffect(() => {
     dispatch(fetchFolders());
@@ -70,6 +77,23 @@ export default function Main() {
     }
   };
 
+  const handleDeleteFolder = async (id: string) => {
+    try {
+      await dispatch(deleteFolder(id)).unwrap();
+      toast.success("Folder deleted successfully");
+
+      if (selectedFolder && selectedFolder.id === id) {
+        setSelectedFolder(null);
+        dispatch(clearFolderShortcuts());
+      }
+
+      dispatch(fetchFolders());
+    } catch (error) {
+      console.error("Failed to delete folder:", error);
+      toast.error("Failed to delete folder. Please try again.");
+    }
+  };
+
   const handleEdit = (id: string) => {
     setSelectedShortcut(id);
   };
@@ -78,15 +102,37 @@ export default function Main() {
     setSelectedShortcut(null);
   };
 
+  const openCreateFolderModal = () => {
+    setFolderModalVariant("CREATE");
+    setFolderToEdit(null);
+    setFolderModalOpen(true);
+  };
+
+  const openEditFolderModal = (folder: Folder) => {
+    setFolderModalVariant("UPDATE");
+    setFolderToEdit(folder);
+    setFolderModalOpen(true);
+  };
+
+  const handleFolderModalOpenChange = (open: boolean) => {
+    setFolderModalOpen(open);
+    if (!open && folderModalVariant === "UPDATE") {
+      setFolderToEdit(null);
+    }
+  };
+
   const handleFolderCreated = (folder: Folder) => {
     setSelectedFolder(folder);
-    setIsCreateFolderModalOpen(false);
     dispatch(fetchFolders());
     dispatch(fetchShortcutsByFolderId(folder.id));
   };
 
-  const handleModalOpenChange = (open: boolean) => {
-    setIsCreateFolderModalOpen(open);
+  const handleFolderUpdated = (updatedFolder: Folder) => {
+    dispatch(fetchFolders());
+
+    if (selectedFolder && selectedFolder.id === updatedFolder.id) {
+      setSelectedFolder(updatedFolder);
+    }
   };
 
   const getCurrentFolderName = () => {
@@ -108,11 +154,7 @@ export default function Main() {
         <div className="col-span-3 border-r p-4 overflow-y-auto">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold">Folders</h2>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setIsCreateFolderModalOpen(true)}
-            >
+            <Button size="sm" variant="ghost" onClick={openCreateFolderModal}>
               <PlusCircle className="h-4 w-4 mr-2" />
               New
             </Button>
@@ -133,22 +175,21 @@ export default function Main() {
                     folder={folder}
                     isSelected={selectedFolder?.id === folder.id}
                     onClick={() => setSelectedFolder(folder)}
-                    onEdit={() => {
-                      // Handle edit folder (could open an edit modal)
-                    }}
-                    onDelete={() => {
-                      // Handle delete folder
-                    }}
+                    onEdit={() => openEditFolderModal(folder)}
+                    onDelete={() => handleDeleteFolder(folder.id)}
                   />
                 ))
               )}
             </div>
           )}
 
-          <CreateFolderModal
-            open={isCreateFolderModalOpen}
-            onOpenChange={handleModalOpenChange}
+          <ManageFolderModal
+            open={folderModalOpen}
+            onOpenChange={handleFolderModalOpenChange}
+            variant={folderModalVariant}
+            folder={folderToEdit}
             onFolderCreated={handleFolderCreated}
+            onFolderUpdated={handleFolderUpdated}
           />
         </div>
 

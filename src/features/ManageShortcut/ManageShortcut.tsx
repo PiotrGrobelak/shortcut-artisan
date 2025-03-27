@@ -22,7 +22,7 @@ export default function ManageShortcuts({
   folder_id,
 }: ManageShortcutsProps) {
   const dispatch = useDispatch<AppDispatch>();
-  const { detailLoading, createLoading, error, currentShortcut } = useSelector(
+  const { currentShortcutLoading, currentShortcut, error } = useSelector(
     (state: RootState) => state.shortcuts
   );
 
@@ -70,7 +70,7 @@ export default function ManageShortcuts({
       }
     : undefined;
 
-  if (detailLoading) {
+  if (currentShortcutLoading) {
     return <div className="p-4">Loading shortcut...</div>;
   }
 
@@ -81,7 +81,7 @@ export default function ManageShortcuts({
       <ShortcutForm
         initialValues={initialValues}
         onSubmit={handleSubmit}
-        isLoading={createLoading}
+        isLoading={currentShortcutLoading}
         submitLabel={selectedShortcutId ? "Update Shortcut" : "Create Shortcut"}
       />
     </div>
