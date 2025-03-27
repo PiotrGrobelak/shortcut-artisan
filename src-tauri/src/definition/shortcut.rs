@@ -21,4 +21,5 @@ pub struct ShortcutRequestPayload {
     pub description: Option<String>,
     pub actions: Vec<ShortcutAction>,
     pub folder_id: Option<String>,
+    pub enabled: bool,
 }

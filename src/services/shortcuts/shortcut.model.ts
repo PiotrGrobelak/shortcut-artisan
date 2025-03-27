@@ -52,4 +52,5 @@ export interface ShortcutPayload {
   description?: string;
   actions: ShortcutAction[];
   folder_id: string;
+  enabled: boolean;
 }

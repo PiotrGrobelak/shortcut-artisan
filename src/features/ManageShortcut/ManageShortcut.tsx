@@ -38,6 +38,7 @@ export default function ManageShortcuts({
       name: values.name,
       description: values.description,
       folder_id,
+      enabled: values.enabled,
       actions: [
         {
           action_type: values.actionType,
@@ -67,6 +68,7 @@ export default function ManageShortcuts({
         actionType:
           currentShortcut.actions[0]?.action_type || ActionType.OpenFolder,
         actionParams: currentShortcut.actions[0]?.parameters || {},
+        enabled: currentShortcut.enabled,
       }
     : undefined;
 

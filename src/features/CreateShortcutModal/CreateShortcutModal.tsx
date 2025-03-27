@@ -51,6 +51,7 @@ export default function CreateNewShortcutModal({
           parameters: values.actionParams,
         },
       ],
+      enabled: values.enabled,
     };
 
     try {

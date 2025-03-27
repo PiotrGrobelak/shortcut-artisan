@@ -45,6 +45,7 @@ vi.mock("@/shared/components/ShortcutForm/ShortcutForm", () => ({
             description: "Test Description",
             actionType: ActionType.OpenFolder,
             actionParams: { path: "/test/path" },
+            enabled: true,
           })
         }
         data-testid="submit-form"

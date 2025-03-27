@@ -7,6 +7,7 @@ import React, {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -26,6 +27,7 @@ export interface ShortcutFormValues {
   description: string;
   actionType: ActionType;
   actionParams: BaseParameters;
+  enabled: boolean;
 }
 
 interface ShortcutFormProps {
@@ -54,6 +56,9 @@ export function ShortcutForm({
   const [isFocused, setIsFocused] = useState(false);
   const [actionType, setActionType] = useState<ActionType>(
     initialValues?.actionType || ActionType.OpenFolder
+  );
+  const [enabled, setEnabled] = useState<boolean>(
+    initialValues?.enabled !== undefined ? initialValues.enabled : true
   );
 
   const [actionParams, setActionParams] = useState<BaseParameters>({
@@ -149,6 +154,7 @@ export function ShortcutForm({
     setName("");
     setDescription("");
     setActionType(ActionType.OpenFolder);
+    setEnabled(true);
     setActionParams({
       path: "",
       app_name: "",
@@ -167,6 +173,7 @@ export function ShortcutForm({
       description,
       actionType,
       actionParams,
+      enabled,
     };
 
     await onSubmit(values);
@@ -192,6 +199,19 @@ export function ShortcutForm({
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Enter shortcut description"
         />
+      </div>
+
+      <div className="space-y-2 flex items-center space-x-2">
+        <Checkbox
+          id="enabled"
+          checked={enabled}
+          onCheckedChange={(checked: boolean | "indeterminate") =>
+            setEnabled(checked === true)
+          }
+        />
+        <Label htmlFor="enabled" className="cursor-pointer">
+          Enable Shortcut
+        </Label>
       </div>
 
       <div className="space-y-2">
