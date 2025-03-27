@@ -86,6 +86,15 @@ impl DefinitionFacade {
 
     pub async fn delete_shortcut(&self, id: &str) -> Result<(), String> {
         if let Ok(shortcut) = self.shortcut_repository.get_by_id(id) {
+            if let Some(folder_id) = &shortcut.folder_id {
+                if let Err(e) = self
+                    .folder_repository
+                    .remove_shortcut_from_folder(folder_id, id)
+                {
+                    log::warn!("Failed to remove shortcut from folder: {}", e);
+                }
+            }
+
             let execution_facade = ExecutionFacade::new(self.app_handle.clone());
 
             if let Some(tauri_shortcut) = execution_facade.parse_shortcut(&shortcut.key_combination)

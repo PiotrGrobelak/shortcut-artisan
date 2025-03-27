@@ -62,6 +62,7 @@ export default function Main() {
       }
 
       if (selectedFolder) {
+        dispatch(fetchFolders());
         dispatch(fetchShortcutsByFolderId(selectedFolder.id));
       }
     } catch (error) {
@@ -156,6 +157,7 @@ export default function Main() {
             <CreateNewShortcutModal
               folderId={selectedFolder?.id || null}
               onSuccess={(id) => {
+                dispatch(fetchFolders());
                 setSelectedShortcut(id);
                 if (selectedFolder) {
                   dispatch(fetchShortcutsByFolderId(selectedFolder.id));
