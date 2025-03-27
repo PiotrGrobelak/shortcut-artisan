@@ -123,6 +123,7 @@ impl<R: Runtime> ExecutionFacade<R> {
             }
         }
     }
+
     pub fn handle_shortcut_event(&self, shortcut: &TauriShortcut, event: ShortcutEvent) {
         log::info!(
             "Shortcut detected: {:?}, State: {:?}",
@@ -169,41 +170,59 @@ impl<R: Runtime> ExecutionFacade<R> {
         }
         Ok(())
     }
+
     fn load_shortcuts_from_file() -> Result<Vec<ExecutionShortcut>, String> {
         let config = AppConfig::global().lock().unwrap();
-        let content = fs::read_to_string(&config.settings_file).map_err(|e| e.to_string())?;
+        let content = match fs::read_to_string(&config.settings_file) {
+            Ok(content) => content,
+            Err(e) => {
+                log::error!("Failed to read settings file: {}", e);
+                return Err(e.to_string());
+            }
+        };
 
-        // Parse as JSON Value
         let json_value: Result<serde_json::Value, _> = serde_json::from_str(&content);
 
         if let Ok(value) = json_value {
-            // Try old array format first
-            if value.is_array() {
-                return serde_json::from_value(value)
-                    .map_err(|e| format!("Failed to load legacy shortcuts: {}", e));
-            }
-
-            // New structure
-            if let Some(shortcuts_obj) = value.get("shortcuts") {
-                // Look for items array
-                if let Some(items) = shortcuts_obj.get("folders") {
-                    if let Some(items_array) = items.as_array() {
-                        if !items_array.is_empty() {
-                            return serde_json::from_value(items_array.clone().into())
-                                .map_err(|e| format!("Failed to parse shortcuts: {}", e));
-                        }
+            if let Some(shortcuts) = value.get("shortcuts") {
+                if let Some(shortcuts_array) = shortcuts.as_array() {
+                    if !shortcuts_array.is_empty() {
+                        log::info!("Found {} shortcuts in settings", shortcuts_array.len());
+                        return match serde_json::from_value::<Vec<ExecutionShortcut>>(
+                            shortcuts_array.clone().into(),
+                        ) {
+                            Ok(shortcuts) => {
+                                log::debug!("Successfully parsed {} shortcuts", shortcuts.len());
+                                Ok(shortcuts)
+                            }
+                            Err(e) => {
+                                log::error!("Failed to parse shortcuts: {}", e);
+                                Err(format!("Failed to parse shortcuts: {}", e))
+                            }
+                        };
+                    } else {
+                        log::info!("Shortcuts array is empty");
                     }
+                } else {
+                    log::warn!("Shortcuts is not an array in settings file");
                 }
 
-                // No items array or it's empty
-                log::info!("No shortcuts found in settings");
+                log::info!("No valid shortcuts found in settings");
                 return Ok(Vec::new());
+            } else {
+                log::warn!("No shortcuts key found in settings file");
             }
+        } else {
+            log::error!(
+                "Failed to parse settings file as JSON: {}",
+                json_value.err().unwrap()
+            );
         }
 
         log::warn!("Invalid settings structure");
         Ok(Vec::new())
     }
+
     pub fn emit_shortcut_event(
         &self,
         shortcut: &TauriShortcut,
