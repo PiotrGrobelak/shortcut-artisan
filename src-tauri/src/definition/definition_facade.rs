@@ -124,6 +124,23 @@ impl DefinitionFacade {
     ) -> Result<Shortcut, String> {
         let existing = self.get_shortcut_by_id(id)?;
 
+        let execution_facade = ExecutionFacade::new(self.app_handle.clone());
+        if let Some(old_tauri_shortcut) = execution_facade.parse_shortcut(&existing.key_combination)
+        {
+            if self
+                .app_handle
+                .global_shortcut()
+                .is_registered(old_tauri_shortcut)
+            {
+                self.app_handle
+                    .global_shortcut()
+                    .unregister(old_tauri_shortcut)
+                    .map_err(|e| e.to_string())?;
+
+                log::info!("Unregistered old shortcut: {}", existing.key_combination);
+            }
+        }
+
         if existing.folder_id != payload.folder_id {
             if let Some(old_folder_id) = &existing.folder_id {
                 if let Err(e) = self
@@ -157,6 +174,29 @@ impl DefinitionFacade {
         };
 
         self.shortcut_repository.save(&updated_shortcut)?;
+
+        let new_tauri_shortcut = match execution_facade
+            .parse_shortcut(&updated_shortcut.key_combination)
+        {
+            Some(shortcut) => shortcut,
+            None => {
+                log::error!(
+                    "Failed to parse updated shortcut combination: '{}'. Please check the key combination format.", 
+                    updated_shortcut.key_combination
+                );
+                return Err("Invalid shortcut combination".to_string());
+            }
+        };
+
+        if let Err(e) = execution_facade.register_system_shortcut(new_tauri_shortcut) {
+            log::error!("Failed to register updated shortcut: {}", e);
+            return Err(format!("Failed to register updated shortcut: {}", e));
+        }
+
+        log::info!(
+            "Successfully registered updated shortcut: {}",
+            updated_shortcut.key_combination
+        );
 
         Ok(updated_shortcut)
     }

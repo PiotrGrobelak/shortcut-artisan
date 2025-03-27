@@ -81,6 +81,7 @@ export default function Main() {
   const handleFolderCreated = (folder: Folder) => {
     setSelectedFolder(folder);
     setIsCreateFolderModalOpen(false);
+    dispatch(fetchFolders());
     dispatch(fetchShortcutsByFolderId(folder.id));
   };
 
