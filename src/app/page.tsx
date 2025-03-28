@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle, X } from "lucide-react";
 import { Folder } from "@/services/shortcuts/folder.model";
 import { toast } from "sonner";
+import { DeleteConfirmationDialog } from "@/shared/components/DeleteConfirmationDialog";
 
 export default function Main() {
   const dispatch = useDispatch<AppDispatch>();
@@ -43,6 +44,15 @@ export default function Main() {
     useState<FolderModalVariant>("CREATE");
   const [folderToEdit, setFolderToEdit] = useState<Folder | null>(null);
 
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<{
+    id: string;
+    name: string;
+    type: "shortcut" | "folder";
+  } | null>(null);
+
   useEffect(() => {
     dispatch(fetchFolders());
   }, [dispatch]);
@@ -63,7 +73,10 @@ export default function Main() {
 
   const handleDelete = async (id: string) => {
     try {
+      setIsDeleting(true);
       await dispatch(deleteShortcut(id)).unwrap();
+      toast.success("Shortcut deleted successfully");
+
       if (selectedShortcut === id) {
         setSelectedShortcut(null);
       }
@@ -74,11 +87,17 @@ export default function Main() {
       }
     } catch (error) {
       console.error("Failed to delete shortcut:", error);
+      toast.error("Failed to delete shortcut. Please try again.");
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteDialogOpen(false);
+      setItemToDelete(null);
     }
   };
 
   const handleDeleteFolder = async (id: string) => {
     try {
+      setIsDeleting(true);
       await dispatch(deleteFolder(id)).unwrap();
       toast.success("Folder deleted successfully");
 
@@ -91,6 +110,10 @@ export default function Main() {
     } catch (error) {
       console.error("Failed to delete folder:", error);
       toast.error("Failed to delete folder. Please try again.");
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteDialogOpen(false);
+      setItemToDelete(null);
     }
   };
 
@@ -144,12 +167,44 @@ export default function Main() {
   const isLoading = foldersLoading || shortcutsLoading;
   const error = foldersError || shortcutsError;
 
+  const confirmDeleteShortcut = (id: string, name: string) => {
+    setItemToDelete({ id, name, type: "shortcut" });
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteFolder = (id: string, name: string) => {
+    setItemToDelete({ id, name, type: "folder" });
+    setIsDeleteDialogOpen(true);
+  };
+
   if (error) {
     return <div className="min-h-screen p-8 text-red-500">Error: {error}</div>;
   }
 
   return (
     <div className="min-h-screen">
+      <DeleteConfirmationDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={() => itemToDelete && handleDelete(itemToDelete.id)}
+        title="Delete Shortcut"
+        description="You're about to delete this shortcut."
+        itemName={itemToDelete?.name || ""}
+        isDeleting={isDeleting}
+        type={itemToDelete?.type || "shortcut"}
+      />
+
+      <DeleteConfirmationDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={() => itemToDelete && handleDeleteFolder(itemToDelete.id)}
+        title="Delete Folder"
+        description="You're about to delete this folder and all its contents."
+        itemName={itemToDelete?.name || ""}
+        isDeleting={isDeleting}
+        type={itemToDelete?.type || "folder"}
+      />
+
       <div className="grid grid-cols-12 h-[calc(100vh-64px)]">
         <div className="col-span-3 border-r p-4 overflow-y-auto">
           <div className="flex justify-between items-center mb-4">
@@ -176,7 +231,7 @@ export default function Main() {
                     isSelected={selectedFolder?.id === folder.id}
                     onClick={() => setSelectedFolder(folder)}
                     onEdit={() => openEditFolderModal(folder)}
-                    onDelete={() => handleDeleteFolder(folder.id)}
+                    onDelete={() => confirmDeleteFolder(folder.id, folder.name)}
                   />
                 ))
               )}
@@ -228,10 +283,7 @@ export default function Main() {
                     keyCombination={shortcut.key_combination}
                     onEdit={() => handleEdit(shortcut.id)}
                     onDelete={(id) => {
-                      handleDelete(id);
-                      if (selectedShortcut === id) {
-                        setSelectedShortcut(null);
-                      }
+                      confirmDeleteShortcut(id, shortcut.command_name);
                     }}
                     isSelected={selectedShortcut === shortcut.id}
                   />
