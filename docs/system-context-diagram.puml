@@ -1,0 +1,31 @@
+@startuml ShortcutArtisan - System Context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+' Define STYLES
+!define PERSON_BG_COLOR #08427B
+!define SYSTEM_BG_COLOR #1168BD
+!define EXTERNAL_SYSTEM_BG_COLOR #999999
+
+' Define LAYOUT
+LAYOUT_WITH_LEGEND()
+
+title "ShortcutArtisan - System Context Diagram"
+
+Person(user, "User", "A person who wants to manage and execute custom keyboard shortcuts to improve productivity")
+
+System(shortcutArtisan, "ShortcutArtisan", "An application that allows users to create, manage, and execute custom keyboard shortcuts")
+
+System_Ext(operatingSystem, "Operating System", "The host operating system (Windows, macOS, Linux) that executes the commands and applications")
+System_Ext(applications, "Target Applications", "Applications that can be launched or controlled through shortcuts")
+System_Ext(filesSystem, "File System", "File system for importing/exporting configurations")
+System_Ext(keyboard, "Keyboard", "Physical input device used to trigger shortcuts")
+
+Rel(user, shortcutArtisan, "Uses", "Creates, manages, and configures shortcuts")
+Rel(user, keyboard, "Interacts with", "Presses key combinations")
+Rel(keyboard, shortcutArtisan, "Triggers", "Key combinations")
+
+Rel(shortcutArtisan, operatingSystem, "Interacts with", "Executes system commands")
+Rel(shortcutArtisan, applications, "Controls", "Launches and interacts with")
+Rel(shortcutArtisan, filesSystem, "Reads/Writes", "Import/export configurations")
+
+@enduml 

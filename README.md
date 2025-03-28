@@ -57,3 +57,31 @@ This will create executable installers in the `src-tauri/target/release` directo
 - `docs/` - Project documentation 📝
 
 ### 🚧 Application is under construction 👷‍♀️🚧
+
+## 💻 Compatibility
+
+ShortcutArtisan currently has the following operating system compatibility:
+
+| Operating System | Status           | Notes                                                  |
+| ---------------- | ---------------- | ------------------------------------------------------ |
+| macOS            | ❌ Not supported | Support planned for future releases                    |
+| Windows          | ❌ Not supported | Support planned for future releases                    |
+| Linux            | 🧪 Experimental  | May have limited functionality and unexpected behavior |
+
+## 📊 System Architecture
+
+Below is a system context diagram showing the high-level architecture of ShortcutArtisan:
+
+<div align="center">
+  <img src="./docs/system-context-diagram.png" alt="System Context Diagram" width="80%" style="border: 1px solid #ddd; border-radius: 8px; padding: 10px; background-color: white;" />
+</div>
+
+The diagram illustrates how ShortcutArtisan interacts with:
+
+- The user who creates and manages shortcuts 👤
+- The operating system to execute commands 💻
+- Target applications that can be controlled 🎯
+- The file system for configuration import/export 📁
+- The keyboard as the physical input device ⌨️
+
+This architecture enables ShortcutArtisan to serve as a central hub for productivity enhancement through custom keyboard shortcuts. ⚡
