@@ -131,6 +131,7 @@ describe("ShortcutForm Component", () => {
           app_name: "",
           script: "",
         },
+        enabled: true,
       });
     });
   });
