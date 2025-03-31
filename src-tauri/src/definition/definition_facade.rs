@@ -225,10 +225,8 @@ impl DefinitionFacade {
         let folder = self.folder_repository.get_folder_by_id(id)?;
 
         for shortcut_id in &folder.shortcut_ids {
-            if let Ok(mut shortcut) = self.shortcut_repository.get_by_id(shortcut_id) {
-                shortcut.folder_id = None;
-                self.shortcut_repository.save(&shortcut)?;
-            }
+            self.shortcut_repository.delete(shortcut_id)?;
+            log::info!("Deleted shortcut {} during folder deletion", shortcut_id);
         }
 
         self.folder_repository.delete_folder(id)
