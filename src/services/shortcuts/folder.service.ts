@@ -19,6 +19,7 @@ export const FolderService = {
   },
 
   delete: async (id: string): Promise<void> => {
+    console.log("Deleting folder", id);
     return await apiClient.invoke<void>("delete_folder", { id });
   },
 };

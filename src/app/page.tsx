@@ -20,8 +20,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { PlusCircle, X } from "lucide-react";
 import { Folder } from "@/services/shortcuts/folder.model";
-import { toast } from "sonner";
 import { DeleteConfirmationDialog } from "@/shared/components/DeleteConfirmationDialog";
+import { toast } from "sonner";
 
 export default function Main() {
   const dispatch = useDispatch<AppDispatch>();
@@ -38,7 +38,9 @@ export default function Main() {
   } = useSelector((state: RootState) => state.folders);
 
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
-  const [selectedShortcut, setSelectedShortcut] = useState<string | null>(null);
+  const [selectedShortcutId, setSelectedShortcutId] = useState<string | null>(
+    null
+  );
   const [folderModalOpen, setFolderModalOpen] = useState(false);
   const [folderModalVariant, setFolderModalVariant] =
     useState<FolderModalVariant>("CREATE");
@@ -65,51 +67,41 @@ export default function Main() {
 
   useEffect(() => {
     if (selectedFolder) {
+      setSelectedShortcutId(null);
       dispatch(fetchShortcutsByFolderId(selectedFolder.id));
     } else {
       dispatch(clearFolderShortcuts());
     }
   }, [selectedFolder, dispatch]);
 
-  const handleDelete = async (id: string) => {
+  const handleDeleteItem = async () => {
+    if (!itemToDelete) return;
+
     try {
       setIsDeleting(true);
-      await dispatch(deleteShortcut(id)).unwrap();
-      toast.success("Shortcut deleted successfully");
 
-      if (selectedShortcut === id) {
-        setSelectedShortcut(null);
-      }
+      if (itemToDelete.type === "shortcut") {
+        await dispatch(deleteShortcut(itemToDelete.id)).unwrap();
 
-      if (selectedFolder) {
-        dispatch(fetchFolders());
-        dispatch(fetchShortcutsByFolderId(selectedFolder.id));
-      }
-    } catch (error) {
-      console.error("Failed to delete shortcut:", error);
-      toast.error("Failed to delete shortcut. Please try again.");
-    } finally {
-      setIsDeleting(false);
-      setIsDeleteDialogOpen(false);
-      setItemToDelete(null);
-    }
-  };
+        if (selectedShortcutId === itemToDelete.id) {
+          setSelectedShortcutId(null);
+        }
 
-  const handleDeleteFolder = async (id: string) => {
-    try {
-      setIsDeleting(true);
-      await dispatch(deleteFolder(id)).unwrap();
-      toast.success("Folder deleted successfully");
+        if (selectedFolder) {
+          dispatch(fetchShortcutsByFolderId(selectedFolder.id));
+        }
+      } else {
+        await dispatch(deleteFolder(itemToDelete.id)).unwrap();
 
-      if (selectedFolder && selectedFolder.id === id) {
-        setSelectedFolder(null);
-        dispatch(clearFolderShortcuts());
+        if (selectedFolder && selectedFolder.id === itemToDelete.id) {
+          setSelectedFolder(null);
+          dispatch(clearFolderShortcuts());
+        }
       }
 
       dispatch(fetchFolders());
     } catch (error) {
-      console.error("Failed to delete folder:", error);
-      toast.error("Failed to delete folder. Please try again.");
+      console.error(`Failed to delete ${itemToDelete.type}:`, error);
     } finally {
       setIsDeleting(false);
       setIsDeleteDialogOpen(false);
@@ -118,11 +110,11 @@ export default function Main() {
   };
 
   const handleEdit = (id: string) => {
-    setSelectedShortcut(id);
+    setSelectedShortcutId(id);
   };
 
   const handleClearSelection = () => {
-    setSelectedShortcut(null);
+    setSelectedShortcutId(null);
   };
 
   const openCreateFolderModal = () => {
@@ -186,23 +178,16 @@ export default function Main() {
       <DeleteConfirmationDialog
         isOpen={isDeleteDialogOpen}
         onClose={() => setIsDeleteDialogOpen(false)}
-        onConfirm={() => itemToDelete && handleDelete(itemToDelete.id)}
-        title="Delete Shortcut"
-        description="You're about to delete this shortcut."
+        onConfirm={handleDeleteItem}
+        title={`Delete ${itemToDelete?.type === "folder" ? "Folder" : "Shortcut"}`}
+        description={
+          itemToDelete?.type === "folder"
+            ? "You're about to delete this folder and all its contents."
+            : "You're about to delete this shortcut."
+        }
         itemName={itemToDelete?.name || ""}
         isDeleting={isDeleting}
         type={itemToDelete?.type || "shortcut"}
-      />
-
-      <DeleteConfirmationDialog
-        isOpen={isDeleteDialogOpen}
-        onClose={() => setIsDeleteDialogOpen(false)}
-        onConfirm={() => itemToDelete && handleDeleteFolder(itemToDelete.id)}
-        title="Delete Folder"
-        description="You're about to delete this folder and all its contents."
-        itemName={itemToDelete?.name || ""}
-        isDeleting={isDeleting}
-        type={itemToDelete?.type || "folder"}
       />
 
       <div className="grid grid-cols-12 h-[calc(100vh-64px)]">
@@ -255,7 +240,7 @@ export default function Main() {
               folderId={selectedFolder?.id || null}
               onSuccess={(id) => {
                 dispatch(fetchFolders());
-                setSelectedShortcut(id);
+                setSelectedShortcutId(id);
                 if (selectedFolder) {
                   dispatch(fetchShortcutsByFolderId(selectedFolder.id));
                 }
@@ -285,7 +270,7 @@ export default function Main() {
                     onDelete={(id) => {
                       confirmDeleteShortcut(id, shortcut.command_name);
                     }}
-                    isSelected={selectedShortcut === shortcut.id}
+                    isSelected={selectedShortcutId === shortcut.id}
                   />
                 ))
               ) : (
@@ -300,11 +285,11 @@ export default function Main() {
         <div className="col-span-6 p-4 overflow-y-auto">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold">
-              {selectedShortcut
+              {selectedShortcutId
                 ? "Edit Shortcut"
                 : "Select a shortcut or create a new one"}
             </h2>
-            {selectedShortcut && (
+            {selectedShortcutId && (
               <Button
                 size="sm"
                 variant="outline"
@@ -316,9 +301,9 @@ export default function Main() {
             )}
           </div>
 
-          {selectedShortcut && selectedFolder ? (
+          {selectedShortcutId && selectedFolder ? (
             <ManageShortcuts
-              selectedShortcutId={selectedShortcut}
+              selectedShortcutId={selectedShortcutId}
               folder_id={selectedFolder.id}
             />
           ) : (

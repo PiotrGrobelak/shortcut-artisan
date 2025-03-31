@@ -92,6 +92,7 @@ impl ShortcutRepository {
             shortcuts.retain(|s| s.get("id").and_then(|id| id.as_str()) != Some(id));
 
             if len_before == shortcuts.len() {
+                log::error!("Shortcut with ID {} not found", id);
                 return Err(format!("Shortcut with ID {} not found", id));
             }
 
