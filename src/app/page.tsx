@@ -21,7 +21,6 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle, X } from "lucide-react";
 import { Folder } from "@/services/shortcuts/folder.model";
 import { DeleteConfirmationDialog } from "@/shared/components/DeleteConfirmationDialog";
-import { toast } from "sonner";
 
 export default function Main() {
   const dispatch = useDispatch<AppDispatch>();

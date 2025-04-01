@@ -43,8 +43,8 @@ export default function ThemeSelector() {
 
   if (!mounted) {
     return (
-      <div className="space-y-4">
-        <div className="grid grid-cols-3 gap-2">
+      <div className="space-y-4 dark:bg-gray-800 dark:text-white">
+        <div className="grid grid-cols-3 gap-2 ">
           {themeOptions.map((option) => {
             const Icon = option.icon;
 
@@ -67,7 +67,7 @@ export default function ThemeSelector() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 dark:bg-gray-800 dark:text-white">
       <div className="grid grid-cols-3 gap-2">
         {themeOptions.map((option) => {
           const Icon = option.icon;
@@ -78,7 +78,7 @@ export default function ThemeSelector() {
               key={option.value}
               onClick={() => setTheme(option.value)}
               className={cn(
-                "relative flex flex-col items-center gap-2 rounded-md border-2 bg-background p-4 transition-all hover:border-primary",
+                "relative flex flex-col items-center gap-2 rounded-md border-2 bg-background p-4 transition-all hover:border-primary dark:bg-gray-800 dark:text-white",
                 isActive ? "border-primary" : "border-border"
               )}
               type="button"
@@ -89,7 +89,7 @@ export default function ThemeSelector() {
 
               <Icon
                 className={cn(
-                  "h-5 w-5",
+                  "h-5 w-5 dark:text-white",
                   isActive ? "text-primary" : "text-muted-foreground"
                 )}
               />

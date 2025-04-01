@@ -33,7 +33,7 @@ export const FolderCard: React.FC<FolderCardProps> = ({
 
   return (
     <div
-      className={`flex items-center justify-between p-4 rounded-md cursor-pointer
+      className={`flex items-center justify-between p-4 rounded-md cursor-pointer dark:bg-gray-800 dark:text-white  
  ${isSelected ? "bg-primary/10 border border-primary/30" : ""}`}
       onClick={handleClick}
     >
@@ -60,7 +60,10 @@ export const FolderCard: React.FC<FolderCardProps> = ({
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent
+              align="end"
+              className="dark:bg-gray-800 dark:text-white"
+            >
               {onEdit && (
                 <DropdownMenuItem onClick={onEdit}>
                   Edit folder

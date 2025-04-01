@@ -8,7 +8,7 @@ export default function SettingsPage() {
       <div className="max-w-2xl mx-auto">
         <h1 className="text-2xl font-bold mb-6">Settings</h1>
 
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+        <div className="bg-white dark:bg-gray-800 dark:text-white p-6 rounded-lg shadow">
           {/* General Settings Section */}
           <div className="mb-6">
             <h2 className="text-lg font-semibold mb-4">General</h2>

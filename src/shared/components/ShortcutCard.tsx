@@ -22,7 +22,7 @@ export function ShortcutCard({
 }: ShortcutCardProps) {
   return (
     <Card
-      className={`bg-white dark:bg-gray-800 p-4 ${isSelected ? "border-2 border-blue-500" : ""}`}
+      className={`bg-white dark:bg-gray-800 dark:text-white p-4 ${isSelected ? "border-2 border-blue-500" : ""}`}
     >
       <div className="flex justify-between items-start mb-3">
         <h3 className="font-medium">{commandName}</h3>

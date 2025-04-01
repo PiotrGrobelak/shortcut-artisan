@@ -53,7 +53,7 @@ export default function DeveloperPage() {
           </CardHeader>
           <CardContent>
             {error && (
-              <div className="bg-red-100 dark:bg-red-900/30 border-l-4 border-red-500 text-red-700 dark:text-red-400 p-4 mb-4">
+              <div className="bg-destructive/10 border-l-4 border-destructive text-destructive p-4 mb-4">
                 <div className="flex items-center">
                   <AlertCircle className="h-5 w-5 mr-2" />
                   <p>{error}</p>
@@ -64,7 +64,10 @@ export default function DeveloperPage() {
             {loading ? (
               <div className="p-4 text-center">Loading settings...</div>
             ) : (
-              <pre className="p-6 overflow-auto text-sm font-mono h-[70vh] bg-gray-50 dark:bg-gray-900 rounded-md">
+              <pre
+                className="p-6 overflow-auto text-sm font-mono h-[70vh] bg-muted dark:bg-gray-900 rounded-md dark:text-white
+"
+              >
                 {settingsJson}
               </pre>
             )}
