@@ -6,6 +6,7 @@
 
    - Users should be able to create, edit, and delete keyboard shortcuts.
    - Users should be able to assign key combinations to specific actions.
+   - Users should be able to use voice to execute shortcuts(experimental).
 
 2. **Action Types**
 
@@ -59,6 +60,7 @@
 
    - Use Tauri for building the desktop application.
    - Implement shortcut handling and execution logic in Rust.
+   - Use speech-to-text systems combined with LLMs for voice commands.
 
 3. **Build and Deployment**
    - Provide scripts for building and packaging the application.
