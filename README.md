@@ -2,8 +2,6 @@
 
 ShortcutArtisan is an application for creating and managing custom keyboard shortcuts. Boost your productivity by tailoring shortcuts to fit your workflow with ease!
 
-<img src="/docs/intro.gif" width="800" alt="Shortcut Artisan">
-
 ## 🛠️ Technologies & Tools
 
 ### 🖥️ Frontend
