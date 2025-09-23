@@ -80,6 +80,8 @@ The diagram illustrates how ShortcutArtisan interacts with:
 
 - The user who creates and manages shortcuts 👤
 - The operating system to execute commands 💻
+- The speech-to-text service to convert voice commands to text 🔊
+- The large language model service to process natural language commands to executable actions 🤖
 - Target applications that can be controlled 🎯
 - The file system for configuration import/export 📁
 - The keyboard as the physical input device ⌨️

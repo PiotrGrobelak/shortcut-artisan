@@ -13,16 +13,26 @@ title "ShortcutArtisan - System Context Diagram"
 
 Person(user, "User", "A person who wants to manage and execute custom keyboard shortcuts to improve productivity")
 
-System(shortcutArtisan, "ShortcutArtisan", "An application that allows users to create, manage, and execute custom keyboard shortcuts")
+System(shortcutArtisan, "ShortcutArtisan", "An application that allows users to create, manage, and execute custom keyboard shortcuts via keyboard input and voice commands")
 
 System_Ext(operatingSystem, "Operating System", "The host operating system (Windows, macOS, Linux) that executes the commands and applications")
 System_Ext(applications, "Target Applications", "Applications that can be launched or controlled through shortcuts")
 System_Ext(filesSystem, "File System", "File system for importing/exporting configurations")
 System_Ext(keyboard, "Keyboard", "Physical input device used to trigger shortcuts")
+System_Ext(microphone, "Microphone", "Audio input device used to capture voice commands")
+System_Ext(speechToTextService, "Speech-to-Text Service", "External service that converts speech audio to text")
+System_Ext(llmService, "Large Language Model Service", "LLM service that processes natural language commands and converts them to executable actions")
 
 Rel(user, shortcutArtisan, "Uses", "Creates, manages, and configures shortcuts")
 Rel(user, keyboard, "Interacts with", "Presses key combinations")
+Rel(user, microphone, "Speaks to", "Voice commands")
 Rel(keyboard, shortcutArtisan, "Triggers", "Key combinations")
+Rel(microphone, shortcutArtisan, "Captures", "Voice input")
+
+Rel(shortcutArtisan, speechToTextService, "Sends audio to", "Speech recognition")
+Rel(speechToTextService, shortcutArtisan, "Returns", "Transcribed text")
+Rel(shortcutArtisan, llmService, "Sends text to", "Natural language processing")
+Rel(llmService, shortcutArtisan, "Returns", "Interpreted commands")
 
 Rel(shortcutArtisan, operatingSystem, "Interacts with", "Executes system commands")
 Rel(shortcutArtisan, applications, "Controls", "Launches and interacts with")
