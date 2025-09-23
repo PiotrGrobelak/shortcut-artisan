@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: shortcut-artisan-ollama
+    ports:
+      - "11500:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_ORIGINS=*
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
+    name: shortcut-artisan-ollama-data

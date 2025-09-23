@@ -25,6 +25,7 @@ Before running the application, ensure you have the following installed:
 - [Node.js](https://nodejs.org/) (LTS version recommended) 📦
 - [Rust](https://www.rust-lang.org/tools/install) toolchain 🦀
 - Platform-specific dependencies for Tauri (see [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/)) 🔍
+- [Docker](https://www.docker.com/) - For AI services (Ollama LLM) 🐳
 
 ## 🚀 Getting Started
 
@@ -47,6 +48,39 @@ This will start both the Next.js frontend and the Tauri backend.
 ```bash
 npm run tauri build
 ```
+
+## 🤖 AI Services Setup
+
+ShortcutArtisan uses local AI models for voice command processing:
+
+1. **Start Ollama service** 🚀:
+
+```bash
+cd docker
+docker compose up -d
+```
+
+2. **Pull the Llama model** (first time only) 📥:
+
+```bash
+docker compose exec ollama ollama pull llama3.2:3b
+```
+
+3. **Verify the setup** ✅:
+
+```bash
+curl http://localhost:11500/api/tags
+```
+
+4. **Stop AI services** 🛑:
+
+```bash
+docker-compose down
+```
+
+**Note**: The Llama 3.2:3b model is ~2GB. Ensure you have sufficient disk space and internet bandwidth for the initial download.
+
+## 📂 Project Structure
 
 This will create executable installers in the `src-tauri/target/release` directory.
 
