@@ -28,6 +28,7 @@ export const FolderForm: React.FC<FolderFormProps> = ({
     if (JSON.stringify(values) !== JSON.stringify(initialValues)) {
       setValues(initialValues);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialValues]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
